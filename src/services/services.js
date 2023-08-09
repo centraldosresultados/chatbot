@@ -3,6 +3,7 @@ const { configuracoes: config } = require('../config')
 const { encode } = require('js-base64')
 const { localStorage } = require('node-localstorage')
 const https = require('https');
+const http = require('http')
 
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 
@@ -26,21 +27,27 @@ function _converteParametrosparaUrl(parametros) {
     return retorno;
 };
 
-function executaFuncaoClasse(classe, funcaoExecutar, parametros, tipo = 'get') {
-    return new Promise((resolve) => {
+async function executaFuncaoClasse(classe, funcaoExecutar, parametros, tipo = 'get') {
+    return await new Promise((resolve, reject) => {
+
         let urlBase = config.caminhoApi + '/' + classe + '/' + funcaoExecutar;
         if (tipo == 'get') {
             let temp = _converteParametrosparaUrl(parametros);
             let parametrosEnviar = typeof parametros === 'object' ? JSON.stringify(temp) : temp;
             console.log(config.caminhoApi + '/' + classe + '/' + funcaoExecutar + '/' + parametrosEnviar);
 
-            https.get(urlBase + '/' + parametrosEnviar, function (res) {
+            http.get(urlBase + '/' + parametrosEnviar, function (res) {
                 let retorno = '';
                 res.on("data", function (chunk) {
                     retorno += chunk
                 });
                 res.on('end', () => {
-                    resolve(JSON.parse(retorno))
+
+                    const primeiroCaracter = retorno.substring(0, 1);
+                    const tipoRetorno = typeof retorno;
+
+                    retorno = tipoRetorno === 'string' && primeiroCaracter == '{' ? JSON.parse(retorno) : retorno;
+                    resolve(retorno)
 
                 })
             }).on('error', function (e) {

@@ -32,7 +32,7 @@ const dbRef = ref(db);
 const buscarSolicitacaoFB = async (id) => {
     return await new Promise((resolve, reject) => {
 
-        get(child(dbRef, `${dataBase}/`)).then( dados =>{
+        get(child(dbRef, `${dataBase}/`)).then(dados => {
             console.log('Retorno Database', dados.val());
         }).catch(error => {
             console.log('Erro Retorno Database', error);
@@ -40,17 +40,18 @@ const buscarSolicitacaoFB = async (id) => {
     })
 }
 
-const salvarSolicitacaoFB = async (solicitacao) => {
+const salvarSolicitacaoFB = async (solicitacao, keyAlt = undefined) => {
     return await new Promise((resolve, reject) => {
-        const key = push(child(dbRef, dataBase)).key;
-        
-        set(ref(db, dataBase + '/' + key), solicitacao).then(() => {
-            resolve(solicitacao.id)          
+        //console.log(keyAlt);
+        const key = keyAlt != undefined ? keyAlt : push(child(dbRef, dataBase)).key;
+        console.log(key);
+        set(ref(db, dataBase + '/' + key.toString()), solicitacao).then(() => {
+            resolve(solicitacao.id)
         }).catch(error => {
             console.log('Erro insert FB', error);
         })
     })
-    
+
 }
 
 const buscarSolicitacao = (chave, callback) => {

@@ -3,10 +3,10 @@ const { Client, MessageMedia, LocalAuth, Buttons } = require('whatsapp-web.js')
 
 const QRCode = require('qrcode')
 
-const { configuracoes: config } = require('./src/config')
+const { configuracoes: config, contatosConfirmacao, pegaIdContatoConfirmacao } = require('./src/config')
 const { montaMensagemCadastroValidacao, montaMensagemEnvioSenha } = require('./src/helpers/funcoesAuxiliares');
 
-const { buscarSolicitacaoFB } = require('./src/services/conexao')
+//const { buscarSolicitacaoFB } = require('./src/services/conexao')
 
 //const { createServer } = config.funcionamento == 'local' ? require('http') : require('https');
 // const httpServer = config.funcionamento == 'local' ? createServer() :
@@ -28,6 +28,7 @@ let socket = undefined;
 const { statusMensagens, conexaoBot } = require('./src/services/conexaoZap')
 const { conexaoIo } = require('./src/services/socket');
 const { vinculacaoes } = require('./src/components/vinculacoes');
+const { menagensPadrao } = require('./src/helpers/mensagens');
 
 let clientBot;
 let contato = {};
@@ -67,23 +68,21 @@ const montaContato = async clientBot => {
             if (tipoInicializacao == 'padrao')
                 socket.emit('mudancaStatus', montaContato(clientBot));
 
+
             //conexaoBot.enviarMensagem('22999134200', 'Teste de Mensagem');
 
             // const vinc = await vinculacaoes.pegaVinculacao('3EB0EB081859FB930E594B', '22999134200')
             // console.log('Vinculacao', vinc);
 
-            setTimeout(() => {
-                vinculacaoes.enviarSolicitacao(4)
-            }, 300);
+            // setTimeout(() => {
+            //     vinculacaoes.enviarSolicitacao(4)
+            // }, 300);
 
-
-
-            //enviarSlicitacao(4)
 
         })
 
         clientBot.on('message', async message => {
-            console.log('Recebendo Mensagem', message);
+            console.log('Recebendo Mensagem');
 
             if (message._data.body == 'Teste Conexão') {
                 const destinatarioRetorno = message._data.from.split('@')[0].substring(2, 13);
@@ -111,12 +110,27 @@ const montaContato = async clientBot => {
 
     if (clientBot == undefined && existsSync('./.wwebjs_auth')) {
         console.log('Reconectando no Recarregamento');
-        //conexaoBot.recebeMensagem('22999134200')
-        //buscarSolicitacaoFB('2_22999134200')
-        //enviarSlicitacao(4)
-        conectarZapBot('', 'sistema');
 
+        conexaoBot.recebeMensagem(menagensPadrao.respostaConfirmaWeb)
 
+        //  const teste = await vinculacaoes.pegaVinculacaoPendente('3EB0DCD8445A54C6E18115','22999134200');
+        //  console.log('Dados Filtrados', teste);
+
+        //conectarZapBot('', 'sistema');
+        // const vinc = {
+        //     acao: 'confirmacaoVinculacao',
+        //     autorizada: false,
+        //     codigo_vinculacao: 4,
+        //     idM: '3EB0FD260ACA6CC40A5638',
+        //     numero: '22999134200',
+        //     respondida: false,
+        //     keyFB: '-NbJv_ztWfa1edpgkYw6'
+        // }
+
+        // setTimeout(async () => {
+        //     const resp = await vinculacaoes.responderSolicitacao(vinc, '2', '22999134200');
+        //    // console.log('Resposta', resp);
+        // }, 1000);
 
 
 

@@ -67,6 +67,8 @@ Proprietário atual: ${dados.criador_atual}
 
 `;
 
+console.log('Imagem', dados.placa_identificacao);
+console.log('Imagem 2', dados.relacao_sispass);
     retorno.texto = texto;
 
     if (dados.placa_identificacao != '') {

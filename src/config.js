@@ -8,11 +8,11 @@ const configuracoes = {
         dataBase: 'centralml_criadores'
     },
     //caminhoImagens: 'http://centralsite.com',
-    //caminhoApi: 'http://centralsistema.com/api/centralCriadores',
+    caminhoApi: 'http://centralsistema.com/api/centralCriadores',
     //logo: '/img/logoMobile.png'
 
     caminhoImagens: 'https://centraldosresultados.ml',
-    caminhoApi: 'https://centraldosresultados.ml/api/centralCriadores',
+    //caminhoApi: 'https://centraldosresultados.ml/api/centralCriadores',
     logo: '/img/logoMobile.png'
 
 }
@@ -69,10 +69,19 @@ const contatosConfirmacao = [
     }
 ]
 
+const pegaIdContatoConfirmacao = (numero) => {
+    const temp = contatosConfirmacao.filter(id => id.telefone == numero);
+    if (temp.length > 0)
+        return temp[0]['id'];
+    else
+        return false;
+}
+
 
 module.exports = {
     configuracoes,
     //configuracoesWeb: configuracoes,
     contatosConfirmacao,
+    pegaIdContatoConfirmacao,
     firebaseConfig
 }
