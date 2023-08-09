@@ -8,11 +8,11 @@ const configuracoes = {
         dataBase: 'centralml_criadores'
     },
     //caminhoImagens: 'http://centralsite.com',
-    caminhoApi: 'http://centralsistema.com/api/centralCriadores',
+    //caminhoApi: 'http://centralsistema.com/api/centralCriadores',
     //logo: '/img/logoMobile.png'
 
     caminhoImagens: 'https://centraldosresultados.ml',
-    //caminhoApi: 'https://centraldosresultados.ml/api/centralCriadores',
+    caminhoApi: 'https://centraldosresultados.ml/api/centralCriadores',
     logo: '/img/logoMobile.png'
 
 }
@@ -50,23 +50,23 @@ const contatosConfirmacao = [
         nome: 'Silvério',
         telefone: '22999134200'
     },
-    {
-        id: 3,
-        nome: 'Junior',
-        telefone: '22998063980'
-    }, {
-        id: 2,
-        nome: 'Jorge',
-        telefone: '22999881992'
-    }, {
-        id: 4,
-        nome: 'Sauro',
-        telefone: '22998372564'
-    }, {
-        id: 14,
-        nome: 'Samuel',
-        telefone: '22997754504'
-    }
+    // {
+    //     id: 3,
+    //     nome: 'Junior',
+    //     telefone: '22998063980'
+    // }, {
+    //     id: 2,
+    //     nome: 'Jorge',
+    //     telefone: '22999881992'
+    // }, {
+    //     id: 4,
+    //     nome: 'Sauro',
+    //     telefone: '22998372564'
+    // }, {
+    //     id: 14,
+    //     nome: 'Samuel',
+    //     telefone: '22997754504'
+    // }
 ]
 
 const pegaIdContatoConfirmacao = (numero) => {

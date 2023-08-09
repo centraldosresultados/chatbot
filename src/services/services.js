@@ -36,7 +36,7 @@ async function executaFuncaoClasse(classe, funcaoExecutar, parametros, tipo = 'g
             let parametrosEnviar = typeof parametros === 'object' ? JSON.stringify(temp) : temp;
             console.log(config.caminhoApi + '/' + classe + '/' + funcaoExecutar + '/' + parametrosEnviar);
 
-            http.get(urlBase + '/' + parametrosEnviar, function (res) {
+            https.get(urlBase + '/' + parametrosEnviar, function (res) {
                 let retorno = '';
                 res.on("data", function (chunk) {
                     retorno += chunk

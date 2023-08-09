@@ -8,45 +8,38 @@ const httpServer = config.funcionamento == 'local' ? createServer() :
     })
 const { Server } = require("socket.io");
 
-const conexaoIo = {
-    io: undefined,
-    novaConexao() {
-        return new Promise((resolve, reject) => {
-            this.io = new Server(httpServer, {
-                cors: {
-                    origin: '*'
-                }
+(() => {
+    const conexaoIo = {
+        io: undefined,
+        novaConexao() {
+            return new Promise((resolve, reject) => {
+                this.io = new Server(httpServer, {
+                    cors: {
+                        origin: '*'
+                    }
+                })
+                httpServer.listen(config.porta, () => {
+                    // console.log(config);
+                    console.log('Rodando');
+                })
+                resolve(this.io)
             })
-            httpServer.listen(config.porta, () => {
-                // console.log(config);
-                console.log('Rodando');
-            })
-            resolve(this.io)
-        })
-    },
-    async pegaConexao() {
-        if (this.io != undefined)
-            return this.io
-        else if (this.io == undefined) {
-            await this.novaConexao()
-            return this.io
+        },
+        async pegaConexao() {
+            if (this.io != undefined)
+                return this.io
+            else if (this.io == undefined) {
+                await this.novaConexao()
+                return this.io
+            }
         }
     }
-}
 
-async function novaConexaoSocket (){
-    return await new Promise((resolve, reject) => {
-        const io = new Server(httpServer, {
-            cors: {
-                origin: '*'
-            }
-        })
+    conexaoIo.novaConexao()
 
-        resolve(io);
-    })
-}
+    module.exports = {
+        conexaoIo
+    }
 
-module.exports = {
-    conexaoIo
-}
+})();
 

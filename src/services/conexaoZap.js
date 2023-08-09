@@ -3,10 +3,12 @@ const { conexaoIo } = require('./socket');
 const { contatosConfirmacao, pegaIdContatoConfirmacao } = require('../config');
 //const { vinculacaoes } = require('../components/vinculacoes');
 
+
 (async () => {
     const conexaoBot = {
         clientBot: undefined,
         async pegaClientBot(nomeSessao) {
+            console.log('Gerando Cliente');
             return await new Promise((resolve, reject) => {
                 if (this.clientBot == undefined) {
                     this.clientBot = new Client({
@@ -164,6 +166,10 @@ const { contatosConfirmacao, pegaIdContatoConfirmacao } = require('../config');
         }
     }
 
+    //await conexaoBot.pegaClientBot();
+
+      
+
     module.exports = {
         conexaoBot,
         //enviarMensagem,
@@ -172,6 +178,4 @@ const { contatosConfirmacao, pegaIdContatoConfirmacao } = require('../config');
         statusMensagens,
     }
 })();
-
-
 

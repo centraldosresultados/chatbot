@@ -41,7 +41,7 @@ const tabela = 'vinculacoes_solicitacoes';
             if (this.vinculacoes == undefined)
                 await this.populaVinculacoes();
 
-            return this.vinculacoes.filter(v => v.idM == idM && v.numero == numero && v.respondida && v.autorizada)
+            return this.vinculacoes.filter(v => v.idM == idM && v.numero == numero && !v.respondida && !v.autorizada)
         },
         async enviarSolicitacao(parametros) {
 
@@ -98,39 +98,29 @@ const tabela = 'vinculacoes_solicitacoes';
                 }
 
                 const respConf = await executaFuncaoClasse('centralCriadores', 'confirmaSolicitacaoVinculacao', parametros, 'get');
-                console.log('Resposta Confirma:' ,respConf);
+                console.log('Resposta Confirma:', respConf);
 
                 if (respConf.sucesso != undefined) {
 
                     let solicitacoesArquivar = this.vinculacoes.filter(vinc => vinc.codigo_vinculacao == solicitacao.codigo_vinculacao)
-                    console.log(solicitacoesArquivar);
                     //console.log(solicitacoesArquivar);
                     solicitacoesArquivar.map(sol => {
-                        sol.autorizada = false;
-                        sol.respondida = false;
+                        sol.autorizada = autorizar;
+                        sol.respondida = true;
 
                         let k = sol.keyFB;
                         //  delete sol.keyFB
                         salvarSolicitacaoFB(sol, k)
                     })
 
+                    conexaoBot.enviarMensagem(origem, respConf.texto)
                     //console.log(solicitacoesArquivar);
+                } else if (respConf.informacao != undefined) {
+                    await conexaoBot.enviarMensagem(origem, respConf.informacao)
                 }
-
-                //         // if (retorno.chave != undefined && retorno.chave > 0) {
-                //         //     clientBot.sendText(mensagem.from, 'Vinculação Confirmada');
-                //         // } else if (retorno.informacao != undefined) {
-                //         //     clientBot.sendText(mensagem.from, retorno.informacao)
-                //         // }
-
-                return respConf
-                console.log('depois');
             } else {
                 console.log('Resposta Inválida');
-                //conexaoBot.enviarMensagem(origem, 'Resposta Inválida, favor responder novamente')
-                return 'Resposta Inválida';
-
-
+                conexaoBot.enviarMensagem(origem, 'Resposta Inválida, favor responder novamente');
             }
         }
     }
