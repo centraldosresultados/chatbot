@@ -12,7 +12,11 @@ const { contatosConfirmacao, pegaIdContatoConfirmacao } = require('../config');
             return await new Promise((resolve, reject) => {
                 if (this.clientBot == undefined) {
                     this.clientBot = new Client({
-                        authStrategy: new LocalAuth()
+                        authStrategy: new LocalAuth(),
+                        puppeteer:{
+                            //headless: 'new',
+                            args: ['--no-sandbox'],
+                        }
                     })
                 }
                 resolve(this.clientBot)

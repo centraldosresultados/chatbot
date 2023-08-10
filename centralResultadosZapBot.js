@@ -46,6 +46,12 @@ const montaContato = async clientBot => {
         await conexaoBot.pegaClientBot();
 
         conexaoBot.clientBot.on('qr', qr => {
+            
+            if(tipoInicializacao == 'sistema'){
+                console.log('Reiniciando pelo Sistema');
+                return false;
+            }
+
             console.log('Gerando QRCode');
             QRCode.toDataURL(qr).then(base64 => {
                 /**Envia ao Cliente o QRCode para conexao ao WhatsApp */
@@ -147,7 +153,7 @@ const montaContato = async clientBot => {
         socket.on('desconectarZap', async (args, callback) => {
             console.log('Desconectando');
             conexaoBot.clientBot.logout();
-            conexaoBot.clientBot.destroy();
+            //conexaoBot.clientBot.destroy();
             callback('sucesso')
         })
 

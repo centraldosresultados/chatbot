@@ -1,10 +1,11 @@
+const { readFileSync } = require('fs');
 const { configuracoes: config } = require('../config')
 
 const { createServer } = config.funcionamento == 'local' ? require('http') : require('https');
 const httpServer = config.funcionamento == 'local' ? createServer() :
     createServer({
-        key: readFileSync("/etc/letsencrypt/live/zapbot.centraldosresultados.com.br/privkey.pem"),
-        cert: readFileSync("/etc/letsencrypt/live/zapbot.centraldosresultados.com.br/cert.pem")
+        key: readFileSync("/etc/letsencrypt/live/chatbot.centraldosresultados.com/privkey.pem"),
+        cert: readFileSync("/etc/letsencrypt/live/chatbot.centraldosresultados.com/cert.pem")
     })
 const { Server } = require("socket.io");
 
