@@ -73,6 +73,7 @@ const tabela = 'vinculacoes_solicitacoes';
                         }
 
                         const foi = await salvarSolicitacaoFB(insere);
+                        resolve({'sucesso': 'Solicitação Enviada, Aguarde a confirmação.'})
                     })
                 });
             });
