@@ -12,7 +12,7 @@ Usuário: *${dados.usuario}*
  
 Senha provisória: *${dados.senha_provisoria}*
 
-Favor retornar à central dos criadores para cadastrar uma nova senha
+Favor retornar à central dos resultados para cadastrar uma nova senha.
 `
     }
 }
@@ -25,12 +25,8 @@ Olá ${dados.nome},
 
 esta é uma menagem da Central dos Resultados para a validação do seu cadastro.
 
-Favor clicar no botão Confirmar para validar seu cadastro e ter acesso à Central dos Criadores.    
-    `,
-        botao: [{
-            id: "retValidaCad_" + dados.codigo_criador,
-            text: "Validar Cadastro"
-        }]
+Seu Cadastro foi validado com sucesso, faça seu login no App.    
+    `   
     }
 
     return retorno;

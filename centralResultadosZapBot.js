@@ -45,6 +45,8 @@ const montaContato = async clientBot => {
         /**Gerando QRCode quando solicitado */
         await conexaoBot.pegaClientBot();
 
+        console.log(conexaoBot);
+
         conexaoBot.clientBot.on('qr', qr => {
             
             if(tipoInicializacao == 'sistema'){

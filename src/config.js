@@ -17,17 +17,31 @@
 
 // }
 
+// const configuracoes = {
+//     funcionamento: 'web',
+//     porta: 3100,
+//     dataBase: {
+//         host: 'https://centraldosresultados.ml',
+//         user: 'centralml_bases',
+//         password: 'central123ml',
+//         dataBase: 'centralml_criadores'
+//     },
+//     caminhoImagens: 'https://centraldosresultados.ml',
+//     caminhoApi: 'https://centraldosresultados.ml/api/centralCriadores',
+//     logo: '/img/logoMobile.png'
+// }
+
 const configuracoes = {
     funcionamento: 'web',
     porta: 3100,
     dataBase: {
-        host: 'https://centraldosresultados.ml',
-        user: 'centralml_bases',
-        password: 'central123ml',
-        dataBase: 'centralml_criadores'
+        host: 'https://itaperuna.net.br',
+        user: 'central_ita',
+        password: 'Central123Criadores',
+        dataBase: 'central_ita_criadores'
     },
-    caminhoImagens: 'https://centraldosresultados.ml',
-    caminhoApi: 'https://centraldosresultados.ml/api/centralCriadores',
+    caminhoImagens: 'https://itaperuna.net.br',
+    caminhoApi: 'https://itaperuna.net/api/centralCriadores',
     logo: '/img/logoMobile.png'
 }
 

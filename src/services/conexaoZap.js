@@ -11,15 +11,17 @@ const { contatosConfirmacao, pegaIdContatoConfirmacao } = require('../config');
             console.log('Gerando Cliente');
             return await new Promise((resolve, reject) => {
                 if (this.clientBot == undefined) {
+                    console.log('Nao Tem o Cliente');
                     this.clientBot = new Client({
                         authStrategy: new LocalAuth(),
-                        puppeteer:{
-                            //headless: 'new',
-                            args: ['--no-sandbox'],
-                        }
+                        // puppeteer:{
+                        //     //headless: 'new',
+                        //     args: ['--no-sandbox'],
+                        // }
                     })
                 }
                 resolve(this.clientBot)
+                
             })
         },
         async enviarMensagem(destinatario, texto, imagem, aguardarEnvio = true) {
