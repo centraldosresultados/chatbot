@@ -29,15 +29,6 @@ const { contatosConfirmacao, pegaIdContatoConfirmacao } = require('../config');
             })
         },
         async enviarMensagem(destinatario, texto, imagem, aguardarEnvio = true) {
-            
-            //Fazendo verificacao se adicionara o nono digito.
-            const num = destinatario;            
-            const DDD = num.substr(0, 2);
-            const tel = num.substr(-8, 8);
-            
-            destinatario = DDD <= 30 ? DDD + '9' + tel : DDD + tel;
-            console.log(num, DDD, tel, destinatario);
-
             if (this.clientBot == undefined || this.clientBot.info == undefined) {
                 console.log('Erro ao Enviar Mensagem, não conectado');
                 return { 'erro': 'WhatsApp não conectado!' }

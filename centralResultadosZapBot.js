@@ -2,7 +2,7 @@
  * Sistema de ChatBot da Central dos Resultados
  * Utilizado como integração entre inicialmente para a Central dos Criadores
  */
-const {  existsSync } = require('fs')
+const { existsSync } = require('fs')
 const QRCode = require('qrcode')
 
 const { montaMensagemCadastroValidacao, montaMensagemEnvioSenha } = require('./src/helpers/funcoesAuxiliares');
@@ -26,8 +26,8 @@ const montaContato = async clientBot => {
 }
 
 (async () => {
-    console.log('Iniciando');    
-    
+    console.log('Iniciando');
+
     console.log('Gerando conexao Socket');
     await conexaoIo.pegaConexao();
     console.log('Criando a conexao WahtsApp');
@@ -45,11 +45,11 @@ const montaContato = async clientBot => {
         /**Gerando QRCode quando solicitado */
         await conexaoBot.pegaClientBot();
 
-        console.log(conexaoBot);
+        //console.log(conexaoBot);
 
         conexaoBot.clientBot.on('qr', qr => {
-            
-            if(tipoInicializacao == 'sistema'){
+
+            if (tipoInicializacao == 'sistema') {
                 console.log('Reiniciando pelo Sistema');
                 return false;
             }
@@ -92,23 +92,28 @@ const montaContato = async clientBot => {
             const id = mensagem.id.id;
             const info = await mensagem.getInfo();
 
-            const altera = {
-                enviado: info.deliveryRemaining <= 0,
-                lida: info.readRemaining <= 0
+            try {
+                const altera = {
+                    enviado: info.deliveryRemaining <= 0,
+                    lida: info.readRemaining <= 0
+                }
+
+                /**Altera o Status da Mensagem */
+                statusMensagens.setMensagem(id, altera);
+            } catch (error) {
+
             }
 
-            /**Altera o Status da Mensagem */
-            statusMensagens.setMensagem(id, altera);
         })
 
         /**Inicializa a Conexao com WhatsApp */
         conexaoBot.clientBot.initialize();
         //*/
     }
-    
+
     /**Verifica se ha conexao salva localmente, caso sim, e o Client nao esteja conectado, Conecta. */
-   
-    const reconectar = (conexaoBot.clientBot.info == undefined ) && existsSync('./.wwebjs_auth');
+
+    const reconectar = (conexaoBot.clientBot.info == undefined) && existsSync('./.wwebjs_auth');
     if (reconectar) {
         console.log('Reconectando no Recarregamento');
         await conectarZapBot('', 'sistema');
@@ -119,7 +124,7 @@ const montaContato = async clientBot => {
     /**Quando o Servidor socket.io é levantado */
     conexaoIo.io.on('connection', (socketIn) => {
         socket = socketIn;
-        
+
         socket.on('enviarSenhaProvisoriaCriador', async (args, callback) => {
             const dadosEnviar = montaMensagemEnvioSenha(args);
 

@@ -47,7 +47,8 @@ const tabela = 'vinculacoes_solicitacoes';
 
             return await new Promise((resolve, reject) => {
                 executaFuncaoClasse('centralCriadores', 'buscarPassaroVinculacaoSolicitacao', parametros).then(retorno => {
-                    const dados = retorno;// solicitacao[0];        
+                    const dados = retorno;// solicitacao[0];      
+                    console.log(retorno);  
                     const dadosEnvio = montaMensagemVinculacaoConfirmacao(dados);
 
                     contatosConfirmacao.map(async item => {

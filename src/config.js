@@ -1,49 +1,35 @@
-// const configuracoes = {
-//     funcionamento: 'local',
-//     porta: 3100,
-//     dataBase: {
-//         host: 'localhost',
-//         user: 'root',
-//         password: 'senha',
-//         dataBase: 'centralml_criadores'
-//     },
-//     //caminhoImagens: 'http://centralsite.com',
-//     //caminhoApi: 'http://centralsistema.com/api/centralCriadores',
-//     //logo: '/img/logoMobile.png'
+const configuracoes = {
+    funcionamento: 'local',
+    porta: 3100,
+    dataBase: {
+        host: 'localhost',
+        user: 'root',
+        password: 'senha',
+        dataBase: 'centralml_criadores'
+    },
+    caminhoImagens: 'http://centralsite.com',
+    caminhoApi: 'http://centralsistema.com/api/centralCriadores',
+    logo: '/img/logoMobile.png'
 
-//     caminhoImagens: 'https://centraldosresultados.ml',
-//     caminhoApi: 'https://centraldosresultados.ml/api/centralCriadores',
-//     logo: '/img/logoMobile.png'
+    // caminhoImagens: 'https://itaperuna.net.br',
+    // caminhoApi: 'https://itaperuna.net/api/centralCriadores',
+    // logo: '/img/logoMobile.png'
 
-// }
+}
 
 // const configuracoes = {
 //     funcionamento: 'web',
 //     porta: 3100,
 //     dataBase: {
-//         host: 'https://centraldosresultados.ml',
-//         user: 'centralml_bases',
-//         password: 'central123ml',
-//         dataBase: 'centralml_criadores'
+//         host: 'https://centraldosresultados.com',
+//         user: 'central_resultados',
+//         password: 'Central123Resultados',
+//         dataBase: 'central_resultados_criadores'
 //     },
-//     caminhoImagens: 'https://centraldosresultados.ml',
-//     caminhoApi: 'https://centraldosresultados.ml/api/centralCriadores',
+//     caminhoImagens: 'https://centraldosresultados.com',
+//     caminhoApi: 'https://centraldosresultados.com/api/centralCriadores',
 //     logo: '/img/logoMobile.png'
 // }
-
-const configuracoes = {
-    funcionamento: 'web',
-    porta: 3100,
-    dataBase: {
-        host: 'https://itaperuna.net.br',
-        user: 'central_ita',
-        password: 'Central123Criadores',
-        dataBase: 'central_ita_criadores'
-    },
-    caminhoImagens: 'https://itaperuna.net.br',
-    caminhoApi: 'https://itaperuna.net/api/centralCriadores',
-    logo: '/img/logoMobile.png'
-}
 
 
 //CONFIGURACAO FIREBASE
