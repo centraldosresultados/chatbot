@@ -1,88 +1,101 @@
-const axios = require('axios')
-const { configuracoes: config } = require('../config')
-const { encode } = require('js-base64')
-const { localStorage } = require('node-localstorage')
-const https = require('https');
-const http = require('http')
-
-const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
+const { configuracoes: config } = require("../config");
+const { encode } = require("js-base64");
+const https = require("https"); // Adicionado require para https
 
 function _converteParametrosparaUrl(parametros) {
-    if (typeof parametros === 'object') {
-        var retorno = {};
+  let convertedParams; // Alterado para evitar redeclaração de 'retorno'
 
-        for (let key in parametros) {
-            let value = parametros[key];
+  if (typeof parametros === "object") {
+    convertedParams = {};
 
-            if (typeof value !== 'object') {
-                retorno[key] = value != undefined ? encode(value.toString().replace('/', '_-_')) : undefined;
-            } else if (typeof value === 'object') {
-                retorno[key] = _converteParametrosparaUrl(value);
-            }
-        }
-    } else {
-        var retorno = parametros;
+    for (let key in parametros) {
+      let value = parametros[key];
+
+      if (typeof value !== "object") {
+        convertedParams[key] =
+          value != undefined
+            ? encode(value.toString().replace("/", "_-_"))
+            : undefined;
+      } else if (typeof value === "object") {
+        convertedParams[key] = _converteParametrosparaUrl(value);
+      }
     }
+  } else {
+    convertedParams = parametros;
+  }
 
-    return retorno;
-};
+  return convertedParams;
+}
 
-async function executaFuncaoClasse(classe, funcaoExecutar, parametros, tipo = 'get') {
-    return await new Promise((resolve, reject) => {
+async function executaFuncaoClasse(
+  classe,
+  funcaoExecutar,
+  parametros,
+  tipo = "get",
+) {
+  return await new Promise((resolve) => {
+    let urlBase = config.caminhoApi + "/" + classe + "/" + funcaoExecutar;
+    if (tipo == "get") {
+      let temp = _converteParametrosparaUrl(parametros);
+      let parametrosEnviar =
+        typeof parametros === "object" ? JSON.stringify(temp) : temp;
+      console.log(
+        config.caminhoApi +
+          "/" +
+          classe +
+          "/" +
+          funcaoExecutar +
+          "/" +
+          parametrosEnviar,
+      );
 
-        let urlBase = config.caminhoApi + '/' + classe + '/' + funcaoExecutar;
-        if (tipo == 'get') {
-            let temp = _converteParametrosparaUrl(parametros);
-            let parametrosEnviar = typeof parametros === 'object' ? JSON.stringify(temp) : temp;
-            console.log(config.caminhoApi + '/' + classe + '/' + funcaoExecutar + '/' + parametrosEnviar);
+      https.get(urlBase + "/" + parametrosEnviar, (resp) => { // Adicionado https.
+        let data = "";
 
-            https.get(urlBase + '/' + parametrosEnviar, function (res) {
-                let retorno = '';
-                res.on("data", function (chunk) {
-                    retorno += chunk
-                });
-                res.on('end', () => {
+        // Abaixo, o código continua igual ao que você já possui...
+        resp.on("data", (chunk) => {
+          data += chunk;
+        });
 
-                    const primeiroCaracter = retorno.substring(0, 1);
-                    const tipoRetorno = typeof retorno;
+        resp.on("end", () => {
+          const primeiroCaracter = data.substring(0, 1);
+          const tipoRetorno = typeof data;
 
-                    retorno = tipoRetorno === 'string' && primeiroCaracter == '{' ? JSON.parse(retorno) : retorno;
-                    resolve(retorno)
+          data =
+            tipoRetorno === "string" && primeiroCaracter == "{"
+              ? JSON.parse(data)
+              : data;
+          resolve(data);
+        });
+      }).on("error", (e) => {
+        console.log("Got error: " + e.message);
+      });
 
-                })
-            }).on('error', function (e) {
-                console.log("Got error: " + e.message);
-            });
-
-
-            //return axios.get(urlBase + '/' + parametrosEnviar);        
-
-        } else if (tipo == 'post') {
-            // let temp = new URLSearchParams(parametros);
-            // return axios({ 
-            //     method: 'post', 
-            //     responseType: 'json', 
-            //     url: urlBase, 
-            //     data: temp,            
-            //     headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            // })
-        }
-    })
-
+      //return axios.get(urlBase + '/' + parametrosEnviar);
+    } else if (tipo == "post") {
+      // let temp = new URLSearchParams(parametros);
+      // return axios({
+      //     method: 'post',
+      //     responseType: 'json',
+      //     url: urlBase,
+      //     data: temp,
+      //     headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      // })
+    }
+  });
 }
 
 function buscarDadosLocais(dadosBuscar) {
-    let dados = localStorage.getItem(dadosBuscar);
-    return JSON.parse(dados);
-
+  let dados = localStorage.getItem(dadosBuscar);
+  return JSON.parse(dados);
 }
 
 function salvarDadosLocais(nomeArmazenamento, dadosSalvar) {
-    localStorage.setItem(nomeArmazenamento, JSON.stringify(dadosSalvar));
+  localStorage.setItem(nomeArmazenamento, JSON.stringify(dadosSalvar));
 }
 
 module.exports = {
-    executaFuncaoClasse,
-    salvarDadosLocais,
-    buscarDadosLocais
-}
+  executaFuncaoClasse,
+  salvarDadosLocais,
+  buscarDadosLocais,
+};

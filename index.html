@@ -1,14 +1,12 @@
 <h1>Central</h1>
 
 <script>
-function httpGet(theUrl)
-{
+  function httpGet(theUrl) {
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", theUrl, false ); // false for synchronous request
-    xmlHttp.send( null );
+    xmlHttp.open("GET", theUrl, false); // false for synchronous request
+    xmlHttp.send(null);
     return xmlHttp.responseText;
-}
+  }
 
-//console.log(httpGet('https://centraldosresultados.ml/api/centralCriadores/centralCriadores/validaCadastroCriador/%7B%22codigo_criador%22:%22NjU3%22,%22telefone%22:%22MjI5OTkxMzQyMDA=%22%7D'))
-
+  //console.log(httpGet('https://centraldosresultados.ml/api/centralCriadores/centralCriadores/validaCadastroCriador/%7B%22codigo_criador%22:%22NjU3%22,%22telefone%22:%22MjI5OTkxMzQyMDA=%22%7D'))
 </script>
