@@ -42,12 +42,30 @@ label {
   font-weight: bold;
 }
 
-input[type="text"] {
-  width: calc(100% - 22px);
+input[type="text"], input[type="email"] { /* Adicionado input[type="email"] para consistência, caso use */
+  width: calc(100% - 22px); /* Mantém o cálculo para inputs que ocupam a largura total do seu contêiner div */
   padding: 10px;
   margin-bottom: 15px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  box-sizing: border-box; /* Adicionado para incluir padding e border na largura/altura total */
+}
+
+.input-row {
+  display: flex;
+  flex-direction: row;
+  gap: 20px; /* Espaço entre os inputs na mesma linha */
+  margin-bottom: 0; /* Remove a margem inferior da linha, já que os inputs têm margem */
+}
+
+.input-row > div {
+  flex: 1; /* Faz com que cada div dentro da linha ocupe espaço igual */
+  /* Se quiser que os inputs tenham larguras diferentes, ajuste o flex-basis ou width aqui */
+}
+
+/* Ajuste para remover a margem inferior do último input em uma linha se não for desejado */
+.input-row > div > input[type="text"] {
+  margin-bottom: 15px; /* Garante que a margem inferior do input seja mantida */
 }
 
 button {
@@ -87,6 +105,32 @@ img {
   max-width: 100%;
   height: auto;
   margin-top: 10px;
+}
+
+.tabs {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+}
+
+.tabs button {
+  padding: 10px 15px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-right: 5px;
+  background-color: #f0f0f0;
+  font-size: 1em;
+  color: #333; /* Adicionado para garantir que o texto seja visível */
+}
+
+.tabs button.active {
+  background-color: #fff;
+  border-color: #ccc;
+  border-bottom: 1px solid #fff;
+  position: relative;
+  top: 1px;
+  color: #007bff; /* Opcional: Cor diferente para a aba ativa */
 }
 
 @keyframes App-logo-spin {

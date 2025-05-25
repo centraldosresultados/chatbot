@@ -11,9 +11,9 @@ const { configuracoes: config } = require("../config");
  * @returns {string} object.texto - Texto da mensagem formatado.
  */
 const montaMensagemEnvioSenha = (dados) => {
-  return {
-    logo: config.caminhoImagens + config.logo, // Concatena o caminho base das imagens com o nome do arquivo do logo
-    texto: `
+    return {
+        logo: config.caminhoImagens + config.logo, // Concatena o caminho base das imagens com o nome do arquivo do logo
+        texto: `
 Olá *${dados.nome}*
 Você esqueceu sua senha, nós estamos te enviando seu usuário e uma senha provisória.
 
@@ -23,8 +23,20 @@ Senha provisória: *${dados.senha_provisoria}*
 
 Favor retornar à central dos resultados para cadastrar uma nova senha.
 `,
-  };
+    };
 };
+
+const montaMensagemErroEnvioSenha = (dados) => {
+    return {
+        texto: `
+    ##INFORMAÇÃO CENTRAL DOS CRIADORES##
+    ${dados.nome} tentou resetar a senha, mas houve algum erro ao enviar a senha provisória.
+    O Número do telefone é: ${dados.telefone}
+    O Usuário é: ${dados.usuario}
+
+    `
+    }
+}
 
 /**
  * Monta a mensagem de validação de cadastro.
@@ -35,33 +47,33 @@ Favor retornar à central dos resultados para cadastrar uma nova senha.
  * @returns {string} object.texto - Texto da mensagem formatado.
  */
 const montaMensagemCadastroValidacao = (dados) => {
-  let retorno = {
-    logo: config.caminhoImagens + config.logo, // Concatena o caminho base das imagens com o nome do arquivo do logo
-    texto: `
+    let retorno = {
+        logo: config.caminhoImagens + config.logo, // Concatena o caminho base das imagens com o nome do arquivo do logo
+        texto: `
 Olá ${dados.nome}, 
 
 esta é uma menagem da Central dos Resultados para a validação do seu cadastro.
 
 Seu Cadastro foi validado com sucesso, faça seu login no App.    
     `,
-  };
+    };
 
-  return retorno;
+    return retorno;
 };
 
 const montaMensagemErroCadastroValidacao = (dados) => {
-  const retorno = {
-    logo: config.caminhoImagens + config.logo, // Concatena o caminho base das imagens com o nome do arquivo do logo  
-    texto: `
+    const retorno = {
+        logo: config.caminhoImagens + config.logo, // Concatena o caminho base das imagens com o nome do arquivo do logo  
+        texto: `
     ##INFORMAÇÃO CENTRAL DOS CRIADORES##
 
     ${dados.nome} tentou validar seu cadastro, mas houve algum erro
     O Número do telefone é: ${dados.telefone}      
-    
+
     #######################
     `,
-  }
-  return retorno;
+    }
+    return retorno;
 }
 
 /**
@@ -92,17 +104,17 @@ const montaMensagemErroCadastroValidacao = (dados) => {
  * @returns {string} object.botoes[].text - Texto do botão.
  */
 const montaMensagemVinculacaoConfirmacao = (dados) => {
-  let retorno = {
-    texto: null,
-    placaIdentifcacao: null,
-    relacaoSispass: null,
-    botoes: null,
-  };
+    let retorno = {
+        texto: null,
+        placaIdentifcacao: null,
+        relacaoSispass: null,
+        botoes: null,
+    };
 
-  // A data da última pontuação é recebida mas não utilizada diretamente na formatação do texto abaixo.
-  // const dt = dados.data_ultima_pontuacao; // Removido dt não utilizado
-  // const dtSol = dt.getDate() + '/' + (dt.getMonth() + 1) + '/' + dt.getFullYear(); // Comentado pois dt não é mais definida
-  const texto = `
+    // A data da última pontuação é recebida mas não utilizada diretamente na formatação do texto abaixo.
+    // const dt = dados.data_ultima_pontuacao; // Removido dt não utilizado
+    // const dtSol = dt.getDate() + '/' + (dt.getMonth() + 1) + '/' + dt.getFullYear(); // Comentado pois dt não é mais definida
+    const texto = `
 ====== APENAS TESTE =========    
 Solicitação de Vinculação de Pássaro.
 Criador: ${dados.criador}  
@@ -123,47 +135,48 @@ Proprietário atual: ${dados.criador_atual}
 
 `;
 
-  // Log para depuração das imagens recebidas
-  console.log("Imagem", dados.placa_identificacao);
-  console.log("Imagem 2", dados.relacao_sispass);
-  retorno.texto = texto;
+    // Log para depuração das imagens recebidas
+    console.log("Imagem", dados.placa_identificacao);
+    console.log("Imagem 2", dados.relacao_sispass);
+    retorno.texto = texto;
 
-  // Adiciona a imagem da placa de identificação se fornecida
-  if (dados.placa_identificacao && dados.placa_identificacao.trim() !== "") {
-    const caminhoPI = config.caminhoImagens + "/" + dados.placa_identificacao;
-    retorno.placaIdentifcacao = {
-      texto: "Placa de Identificação",
-      imagem: caminhoPI,
-    };
-  }
+    // Adiciona a imagem da placa de identificação se fornecida
+    if (dados.placa_identificacao && dados.placa_identificacao.trim() !== "") {
+        const caminhoPI = config.caminhoImagens + "/" + dados.placa_identificacao;
+        retorno.placaIdentifcacao = {
+            texto: "Placa de Identificação",
+            imagem: caminhoPI,
+        };
+    }
 
-  // Adiciona a imagem da relação Sispass se fornecida
-  if (dados.relacao_sispass && dados.relacao_sispass.trim() !== "") {
-    const caminhoRS = config.caminhoImagens + "/" + dados.relacao_sispass;
-    retorno.relacaoSispass = {
-      texto: "Relação Sispass",
-      imagem: caminhoRS,
-    };
-  }
+    // Adiciona a imagem da relação Sispass se fornecida
+    if (dados.relacao_sispass && dados.relacao_sispass.trim() !== "") {
+        const caminhoRS = config.caminhoImagens + "/" + dados.relacao_sispass;
+        retorno.relacaoSispass = {
+            texto: "Relação Sispass",
+            imagem: caminhoRS,
+        };
+    }
 
-  // Define os botões de ação para confirmar ou recusar a vinculação
-  let botoes = [
-    {
-      id: "retVinc_" + dados.chave_passaro_vinculacao_solicitacao + "_1", // ID para confirmar
-      text: "Confirmar",
-    },
-    {
-      id: "retVinc_" + dados.chave_passaro_vinculacao_solicitacao + "_0", // ID para recusar
-      text: "Recusar",
-    },
-  ];
-  retorno.botoes = botoes;
-  return retorno;
+    // Define os botões de ação para confirmar ou recusar a vinculação
+    let botoes = [
+        {
+            id: "retVinc_" + dados.chave_passaro_vinculacao_solicitacao + "_1", // ID para confirmar
+            text: "Confirmar",
+        },
+        {
+            id: "retVinc_" + dados.chave_passaro_vinculacao_solicitacao + "_0", // ID para recusar
+            text: "Recusar",
+        },
+    ];
+    retorno.botoes = botoes;
+    return retorno;
 };
 
 module.exports = {
-  montaMensagemVinculacaoConfirmacao,
-  montaMensagemCadastroValidacao,
-  montaMensagemErroCadastroValidacao,
-  montaMensagemEnvioSenha,
+    montaMensagemVinculacaoConfirmacao,
+    montaMensagemCadastroValidacao,
+    montaMensagemErroCadastroValidacao,
+    montaMensagemEnvioSenha,
+    montaMensagemErroEnvioSenha
 };

@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import './App.css';
+import EnviarSenhaProvisoria from './components/EnviarSenhaProvisoria';
+import EnviarValidacaoCadastro from './components/EnviarValidacaoCadastro';
 
 // Connect to the Socket.io server.
-// Replace with your server's URL if it\'s different.
+// Replace with your server's URL if it's different.
 const SOCKET_SERVER_URL = 'http://localhost:3100';
 
 function App() {
   const [socket, setSocket] = useState(null);
-  const [nomeCadastro, setNomeCadastro] = useState('');
-  const [telefoneCadastro, setTelefoneCadastro] = useState('');
   const [responseArea, setResponseArea] = useState('');
   const [qrCode, setQrCode] = useState('');
   const [status, setStatus] = useState({});
+  const [activeTab, setActiveTab] = useState('validacaoCadastro');
 
   useEffect(() => {
     // Initialize socket connection
@@ -43,21 +44,6 @@ function App() {
     };
   }, []);
 
-  const handleEnviarValidacaoCadastro = () => {
-    if (!nomeCadastro || !telefoneCadastro) {
-      alert('Por favor, preencha Nome e Telefone.');
-      return;
-    }
-    if (socket) {
-      setResponseArea(prev => prev + 'Enviando solicitação de validação de cadastro...\\n');
-      socket.emit('enviarValidacaoCadastro', { nome: nomeCadastro, telefone: telefoneCadastro }, (response) => {
-        setResponseArea(prev => prev + `Resposta de "enviarValidacaoCadastro":\\n${JSON.stringify(response, null, 2)}\\n`);
-      });
-    } else {
-      alert('Socket não conectado.');
-    }
-  };
-
   return (
     <div className="App">
       <header className="App-header">
@@ -87,30 +73,27 @@ function App() {
           )}
         </div>
 
-        <div className="event-test">
-          <h2>Enviar Validação de Cadastro</h2>
-          <div>
-            <label htmlFor="nomeCadastro">Nome:</label>
-            <input
-              type="text"
-              id="nomeCadastro"
-              value={nomeCadastro}
-              onChange={(e) => setNomeCadastro(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="telefoneCadastro">Telefone (ex: 11999998888):</label>
-            <input
-              type="text"
-              id="telefoneCadastro"
-              value={telefoneCadastro}
-              onChange={(e) => setTelefoneCadastro(e.target.value)}
-            />
-          </div>
-          <button onClick={handleEnviarValidacaoCadastro} disabled={!socket}>
-            Enviar Validação Cadastro
+        <div className="tabs">
+          <button 
+            className={activeTab === 'validacaoCadastro' ? 'active' : ''} 
+            onClick={() => setActiveTab('validacaoCadastro')}
+          >
+            Validação de Cadastro
+          </button>
+          <button 
+            className={activeTab === 'senhaProvisoria' ? 'active' : ''} 
+            onClick={() => setActiveTab('senhaProvisoria')}
+          >
+            Senha Provisória Criador
           </button>
         </div>
+
+        {activeTab === 'validacaoCadastro' && (
+          <EnviarValidacaoCadastro socket={socket} setResponseArea={setResponseArea} />
+        )}
+        {activeTab === 'senhaProvisoria' && (
+          <EnviarSenhaProvisoria socket={socket} setResponseArea={setResponseArea} />
+        )}
 
         <div className="response-area">
           <h2>Resposta do Servidor:</h2>

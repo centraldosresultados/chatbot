@@ -17,6 +17,7 @@ const {
     montaMensagemCadastroValidacao,
     montaMensagemEnvioSenha,
     montaMensagemErroCadastroValidacao,
+    montaMensagemErroEnvioSenha,
 } = require("./src/helpers/funcoesAuxiliares");
 
 const { statusMensagens, conexaoBot } = require("./src/services/conexaoZap");
@@ -58,43 +59,43 @@ const montaContato = async (clientBot) => {
     console.log("Iniciando");
 
     // Create an HTTP server to serve the test interface
-    const server = http.createServer((req, res) => {
-        if (req.url === '/' || req.url === '/test-interface.html') {
-            fs.readFile(path.join(__dirname, 'test-interface.html'), (err, data) => {
-                if (err) {
-                    res.writeHead(500);
-                    res.end('Error loading test-interface.html');
-                    return;
-                }
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end(data);
-            });
-        } else if (req.url === '/socket.io/socket.io.js') {
-            fs.readFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'), (err, data) => {
-                if (err) {
-                    res.writeHead(500);
-                    res.end('Error loading socket.io.js');
-                    return;
-                }
-                res.writeHead(200, { 'Content-Type': 'application/javascript' });
-                res.end(data);
-            });
-        }
-        else {
-            res.writeHead(404);
-            res.end('Not Found');
-        }
-    });
+    // const server = http.createServer((req, res) => {
+    //     if (req.url === '/' || req.url === '/test-interface.html') {
+    //         fs.readFile(path.join(__dirname, 'test-interface.html'), (err, data) => {
+    //             if (err) {
+    //                 res.writeHead(500);
+    //                 res.end('Error loading test-interface.html');
+    //                 return;
+    //             }
+    //             res.writeHead(200, { 'Content-Type': 'text/html' });
+    //             res.end(data);
+    //         });
+    //     } else if (req.url === '/socket.io/socket.io.js') {
+    //         fs.readFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'), (err, data) => {
+    //             if (err) {
+    //                 res.writeHead(500);
+    //                 res.end('Error loading socket.io.js');
+    //                 return;
+    //             }
+    //             res.writeHead(200, { 'Content-Type': 'application/javascript' });
+    //             res.end(data);
+    //         });
+    //     }
+    //     else {
+    //         res.writeHead(404);
+    //         res.end('Not Found');
+    //     }
+    // });
 
     // Attach Socket.io to the HTTP server
-    conexaoIo.io.attach(server);
+    // conexaoIo.io.attach(server);
 
-    // Start the HTTP server
-    const PORT = process.env.PORT || 3000; // Or any port you prefer
-    server.listen(PORT, () => {
-        console.log(`Servidor HTTP rodando na porta ${PORT}`);
-        console.log(`Acesse a interface de teste em http://localhost:${PORT}/test-interface.html`);
-    });
+    // // Start the HTTP server
+    // const PORT = process.env.PORT || 3000; // Or any port you prefer
+    // server.listen(PORT, () => {
+    //     console.log(`Servidor HTTP rodando na porta ${PORT}`);
+    //     console.log(`Acesse a interface de teste em http://localhost:${PORT}/test-interface.html`);
+    // });
 
 
     console.log("Gerando conexao Socket");
@@ -207,14 +208,36 @@ const montaContato = async (clientBot) => {
 
         // Evento para enviar senha provisória ao criador.
         socket.on("enviarSenhaProvisoriaCriador", async (args, callback) => {
+            console.log("Argumentos recebidos para enviarSenhaProvisoriaCriador:", args);
+            
+            // Verifica se 'args.telefone' existe, pois ele é usado em conexaoBot.enviarMensagem
+            if (!args || !args.telefone) {
+                console.error("Erro: Telefone não fornecido para enviarSenhaProvisoriaCriador.");
+                if (callback) callback({ erro: "Telefone não fornecido." });
+                return;
+            }
+
             const dadosEnviar = montaMensagemEnvioSenha(args); // Prepara a mensagem.
+            // 'montaMensagemEnvioSenha' deve ser capaz de lidar com os novos campos:
+            // args.nome, args.cpf, args.telefone, args.usuario, args.senha_provisoria
 
             const retornoMensagem = await conexaoBot.enviarMensagem(
-                args.telefone,
+                args.telefone, // Usando o novo campo telefone do payload
                 dadosEnviar.texto,
                 dadosEnviar.logo,
                 true, // Aguarda a confirmação do envio.
             );
+
+            if (retornoMensagem.erro != undefined) {
+                for (const item of contatosConfirmacao) {
+                    console.log(montaMensagemErroEnvioSenha(args));
+                    
+                    // Envia mensagem de erro para os contatos de confirmação.
+                    const dadosErro = montaMensagemErroEnvioSenha(args);
+                    await conexaoBot.enviarMensagem(item.telefone, dadosErro.texto);
+                }
+            }
+
             if (callback) callback(retornoMensagem); // Retorna o resultado da operação.
         });
 
