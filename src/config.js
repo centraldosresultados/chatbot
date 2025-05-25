@@ -83,6 +83,13 @@ const firebaseConfig = {
  * @property {string} nome - Nome do contato.
  * @property {string} telefone - Número de telefone do contato (sem formatação, apenas dígitos).
  */
+
+const contatoAdministrador = {
+  id: 1,
+  nome: "Silvério",
+  telefone: "22999134200", // Telefone do administrador
+};
+
 const contatosConfirmacao = [
   {
     id: 28,
@@ -128,4 +135,5 @@ module.exports = {
   contatosConfirmacao,
   pegaIdContatoConfirmacao,
   firebaseConfig,
+  contatoAdministrador
 };
