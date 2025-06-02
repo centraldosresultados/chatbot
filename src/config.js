@@ -23,10 +23,14 @@
 //   funcionamento: "local", // Define se está rodando localmente ou em produção/web
 //   porta: 3100, // Porta para o servidor HTTP/Socket.io
 //   dataBase: {
-//     host: "localhost",
-//     user: "root",
-//     password: "senha", // ATENÇÃO: Considerar o uso de variáveis de ambiente para senhas
-//     dataBase: "centralml_criadores",
+//     // host: "localhost",
+//     // user: "root",
+//     // password: "senha", // ATENÇÃO: Considerar o uso de variáveis de ambiente para senhas
+//     // dataBase: "central_criadores",
+//     host: 'centraldosresultados.com',
+//     user: 'central_resultados',
+//     password: 'Central123Resultados',
+//     dataBase: 'central_resultados_criadores'
 //   },
 //   caminhoImagens: "http://centralsite.com", // URL base para buscar imagens
 //   caminhoApi: "http://centralsistema.com/api/centralCriadores", // URL da API principal

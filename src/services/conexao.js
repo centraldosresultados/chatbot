@@ -86,8 +86,25 @@ const buscarSolicitacao = (chave, callback) => {
   });
 };
 
+const buscaTodosCriadores = () => {
+  return new Promise((resolve) => {
+    const sql = "SELECT chave_cadastro, nome, tel_1 FROM view_criadores"; // Query SQL para buscar todos os criadores
+    con.query(sql, (erro, dados) => {
+      if (erro) {
+        console.error("Erro ao buscar criadores no MySQL:", erro); // Log do erro
+        resolve(null, erro); // Chama o callback com null para dados e o objeto de erro
+        return;
+      }
+      resolve(dados); // Chama o callback com os dados encontrados
+    });
+  });
+}
+
 module.exports = {
   buscarSolicitacao, // Exporta a função para buscar no MySQL
   salvarSolicitacaoFB, // Exporta a função para salvar no Firebase
   buscarSolicitacaoFB, // Exporta a função para buscar no Firebase
+  buscaTodosCriadores
 };
+
+

@@ -29,6 +29,7 @@ const http = require('http'); // Required for serving the HTML file
 const fs = require('fs'); // Required for reading the HTML file
 const path = require('path'); // Required for path manipulation
 const { contatosConfirmacao } = require("./src/config");
+const { buscaTodosCriadores } = require("./src/services/conexao");
 
 /** @type {import('socket.io').Socket | undefined} */
 let socket = undefined; // Variável para armazenar a instância do socket conectado.
@@ -59,49 +60,13 @@ const montaContato = async (clientBot) => {
 (async () => {
     console.log("Iniciando");
 
-    // Create an HTTP server to serve the test interface
-    // const server = http.createServer((req, res) => {
-    //     if (req.url === '/' || req.url === '/test-interface.html') {
-    //         fs.readFile(path.join(__dirname, 'test-interface.html'), (err, data) => {
-    //             if (err) {
-    //                 res.writeHead(500);
-    //                 res.end('Error loading test-interface.html');
-    //                 return;
-    //             }
-    //             res.writeHead(200, { 'Content-Type': 'text/html' });
-    //             res.end(data);
-    //         });
-    //     } else if (req.url === '/socket.io/socket.io.js') {
-    //         fs.readFile(path.join(__dirname, 'node_modules/socket.io/client-dist/socket.io.js'), (err, data) => {
-    //             if (err) {
-    //                 res.writeHead(500);
-    //                 res.end('Error loading socket.io.js');
-    //                 return;
-    //             }
-    //             res.writeHead(200, { 'Content-Type': 'application/javascript' });
-    //             res.end(data);
-    //         });
-    //     }
-    //     else {
-    //         res.writeHead(404);
-    //         res.end('Not Found');
-    //     }
-    // });
-
-    // Attach Socket.io to the HTTP server
-    // conexaoIo.io.attach(server);
-
-    // // Start the HTTP server
-    // const PORT = process.env.PORT || 3000; // Or any port you prefer
-    // server.listen(PORT, () => {
-    //     console.log(`Servidor HTTP rodando na porta ${PORT}`);
-    //     console.log(`Acesse a interface de teste em http://localhost:${PORT}/test-interface.html`);
-    // });
-
-
+   // console.log(await buscaTodosCriadores());
     console.log("Gerando conexao Socket");
     // await conexaoIo.pegaConexao(); // This is now handled by attaching to the HTTP server
     console.log("Criando a conexao WahtsApp");
+
+
+
     await conexaoBot.pegaClientBot(); // Prepara o cliente do WhatsApp.
     monitorarDesconexao(); // Inicia o monitoramento de desconexão
     vinculacaoes.populaVinculacoes(); // Carrega as vinculações pendentes.
@@ -210,7 +175,7 @@ const montaContato = async (clientBot) => {
         // Evento para enviar senha provisória ao criador.
         socket.on("enviarSenhaProvisoriaCriador", async (args, callback) => {
             console.log("Argumentos recebidos para enviarSenhaProvisoriaCriador:", args);
-            
+
             // Verifica se 'args.telefone' existe, pois ele é usado em conexaoBot.enviarMensagem
             if (!args || !args.telefone) {
                 console.error("Erro: Telefone não fornecido para enviarSenhaProvisoriaCriador.");
@@ -226,13 +191,13 @@ const montaContato = async (clientBot) => {
                 args.telefone, // Usando o novo campo telefone do payload
                 dadosEnviar.texto,
                 dadosEnviar.logo,
-                true, // Aguarda a confirmação do envio.
+                3 // Número de tentativas de envio
             );
 
             if (retornoMensagem.erro != undefined) {
                 for (const item of contatosConfirmacao) {
                     console.log(montaMensagemErroEnvioSenha(args));
-                    
+
                     // Envia mensagem de erro para os contatos de confirmação.
                     const dadosErro = montaMensagemErroEnvioSenha(args);
                     await conexaoBot.enviarMensagem(item.telefone, dadosErro.texto);
@@ -269,7 +234,7 @@ const montaContato = async (clientBot) => {
             if (envio.erro != undefined) {
                 for (const item of contatosConfirmacao) {
                     console.log(montaMensagemErroCadastroValidacao(args));
-                    
+
                     // Envia mensagem de erro para os contatos de confirmação.
                     const dadosErro = montaMensagemErroCadastroValidacao(args);
                     await conexaoBot.enviarMensagem(item.telefone, dadosErro.texto);
