@@ -29,7 +29,8 @@ const http = require('http'); // Required for serving the HTML file
 const fs = require('fs'); // Required for reading the HTML file
 const path = require('path'); // Required for path manipulation
 const { contatosConfirmacao } = require("./src/config");
-const { buscaTodosCriadores } = require("./src/services/conexao");
+const { buscaTodosCriadores, buscarCriadoresSelecionados } = require("./src/services/conexao");
+const mongoService = require("./src/services/mongodb");
 
 /** @type {import('socket.io').Socket | undefined} */
 let socket = undefined; // Variável para armazenar a instância do socket conectado.
@@ -146,6 +147,27 @@ const montaContato = async (clientBot) => {
 
                 /**Altera o Status da Mensagem */
                 statusMensagens.setMensagem(id, altera); // Atualiza o status da mensagem no sistema.
+
+                // Atualizar status no MongoDB
+                let novoStatus = 'Enviada';
+                if (altera.lida) {
+                    novoStatus = 'Lida';
+                } else if (altera.enviado) {
+                    novoStatus = 'Entregue';
+                }
+
+                // Tentar atualizar em todas as tabelas (tb_envio_validacoes, tb_envio_senhas, tb_envio_mensagens)
+                const tabelas = ['tb_envio_validacoes', 'tb_envio_senhas', 'tb_envio_mensagens'];
+                
+                for (const tabela of tabelas) {
+                    try {
+                        await mongoService.atualizarStatusMensagem(tabela, id, novoStatus);
+                    } catch (error) {
+                        // Erro silencioso - nem todas as mensagens estarão em todas as tabelas
+                        console.log(`[MongoDB] Mensagem ${id} não encontrada em ${tabela}`);
+                    }
+                }
+
             } catch (e) {
                 console.error("Erro ao processar message_ack:", e);
             }
@@ -194,6 +216,19 @@ const montaContato = async (clientBot) => {
                 3 // Número de tentativas de envio
             );
 
+            // Salvar no MongoDB independente de erro ou sucesso
+            try {
+                await mongoService.salvarEnvioSenha({
+                    telefone: args.telefone,
+                    nome: args.nome,
+                    status_mensagem: retornoMensagem.erro ? 'Erro' : 'Enviada',
+                    id_mensagem: retornoMensagem.id || null
+                });
+                console.log("Envio de senha salvo no MongoDB");
+            } catch (mongoError) {
+                console.error("Erro ao salvar envio de senha no MongoDB:", mongoError);
+            }
+
             if (retornoMensagem.erro != undefined) {
                 for (const item of contatosConfirmacao) {
                     console.log(montaMensagemErroEnvioSenha(args));
@@ -231,6 +266,19 @@ const montaContato = async (clientBot) => {
                 dadosEnviar.logo,
             );
 
+            // Salvar no MongoDB independente de erro ou sucesso
+            try {
+                await mongoService.salvarValidacaoCadastro({
+                    telefone: args.telefone,
+                    nome: args.nome,
+                    status_mensagem: envio.erro ? 'Erro' : 'Enviada',
+                    id_mensagem: envio.id || null
+                });
+                console.log("Validação de cadastro salva no MongoDB");
+            } catch (mongoError) {
+                console.error("Erro ao salvar validação no MongoDB:", mongoError);
+            }
+
             if (envio.erro != undefined) {
                 for (const item of contatosConfirmacao) {
                     console.log(montaMensagemErroCadastroValidacao(args));
@@ -240,8 +288,6 @@ const montaContato = async (clientBot) => {
                     await conexaoBot.enviarMensagem(item.telefone, dadosErro.texto);
                 }
             }
-
-
 
             if (callback) callback(envio); // Retorna o resultado da operação.
         });
@@ -294,6 +340,159 @@ const montaContato = async (clientBot) => {
             // Por exemplo, impedir múltiplas chamadas simultâneas a conectarZapBot.
             conectarZapBot(nomeSessao);
             if (callback) callback("Conectando...");
+        });
+
+        // Novo evento: Listar todos os criadores
+        socket.on("listarTodosCriadores", async (args, callback) => {
+            console.log("Listando todos os criadores");
+            try {
+                const criadores = await buscaTodosCriadores();
+                if (callback) callback({ sucesso: true, dados: criadores });
+            } catch (error) {
+                console.error("Erro ao listar criadores:", error);
+                if (callback) callback({ erro: "Erro ao buscar criadores", detalhes: error.message });
+            }
+        });
+
+        // Novo evento: Enviar mensagem para todos os criadores selecionados
+        socket.on("enviarMensagemParaTodos", async (args, callback) => {
+            console.log("Enviando mensagem para criadores selecionados");
+            console.log("Argumentos recebidos:", args);
+            
+            
+            try {
+                const { mensagem, criadores } = args;
+                
+                if (!mensagem || !criadores || criadores.length === 0) {
+                    if (callback) callback({ erro: "Mensagem e criadores são obrigatórios" });
+                    return;
+                }
+
+                // Buscar dados completos dos criadores selecionados
+                const criadoresCompletos = await buscarCriadoresSelecionados(criadores);
+                
+                if (criadoresCompletos.length === 0) {
+                    if (callback) callback({ erro: "Nenhum criador encontrado com os códigos informados" });
+                    return;
+                }
+
+                let resultados = [];
+                let sucessos = 0;
+                let erros = 0;
+
+                // Enviar mensagem para cada criador
+                for (const criador of criadoresCompletos) {
+                    try {
+                        const resultado = await conexaoBot.enviarMensagem(
+                            criador.telefone,
+                            mensagem,
+                            null, // sem imagem
+                            3 // tentativas
+                        );
+
+                        const statusEnvio = resultado.erro ? 'Erro' : 'Enviada';
+                        
+                        // Atualizar status do criador com ID único
+                        criador.status_mensagem = statusEnvio;
+                        criador.id_mensagem = resultado.id || `erro_${Date.now()}_${Math.random()}`;
+                        criador.resultado_envio = resultado;
+
+                        if (resultado.erro) {
+                            erros++;
+                        } else {
+                            sucessos++;
+                        }
+
+                        resultados.push({
+                            criador: criador.nome,
+                            telefone: criador.telefone,
+                            status: statusEnvio,
+                            id_mensagem: criador.id_mensagem,
+                            detalhes: resultado
+                        });
+
+                    } catch (error) {
+                        erros++;
+                        const id_erro = `erro_${Date.now()}_${Math.random()}`;
+                        criador.status_mensagem = 'Erro';
+                        criador.id_mensagem = id_erro;
+                        resultados.push({
+                            criador: criador.nome,
+                            telefone: criador.telefone,
+                            status: 'Erro',
+                            id_mensagem: id_erro,
+                            detalhes: { erro: error.message }
+                        });
+                    }
+                }
+
+                // Salvar no MongoDB
+                try {
+                    await mongoService.salvarMensagemParaTodos({
+                        mensagem: mensagem,
+                        criadores: criadoresCompletos,
+                        id_lote: `lote_${Date.now()}` // ID do lote para controle
+                    });
+                } catch (mongoError) {
+                    console.error("Erro ao salvar no MongoDB:", mongoError);
+                }
+
+                const retorno = {
+                    sucesso: true,
+                    total_enviados: criadoresCompletos.length,
+                    sucessos: sucessos,
+                    erros: erros,
+                    resultados: resultados
+                };
+
+                if (callback) callback(retorno);
+
+            } catch (error) {
+                console.error("Erro ao enviar mensagem para todos:", error);
+                if (callback) callback({ erro: "Erro interno ao processar envio", detalhes: error.message });
+            }
+        });
+
+        // Eventos para listagem de dados do MongoDB
+        socket.on("listarValidacoesCadastro", async (args, callback) => {
+            try {
+                const validacoes = await mongoService.listarValidacoesCadastro();
+                if (callback) callback({ sucesso: true, dados: validacoes });
+            } catch (error) {
+                console.error("Erro ao listar validações:", error);
+                if (callback) callback({ erro: "Erro ao buscar validações", detalhes: error.message });
+            }
+        });
+
+        socket.on("listarEnviosSenhas", async (args, callback) => {
+            try {
+                const envios = await mongoService.listarEnviosSenhas();
+                if (callback) callback({ sucesso: true, dados: envios });
+            } catch (error) {
+                console.error("Erro ao listar envios de senhas:", error);
+                if (callback) callback({ erro: "Erro ao buscar envios de senhas", detalhes: error.message });
+            }
+        });
+
+        socket.on("listarMensagensEnviadas", async (args, callback) => {
+            try {
+                const mensagens = await mongoService.listarMensagensEnviadas();
+                if (callback) callback({ sucesso: true, dados: mensagens });
+            } catch (error) {
+                console.error("Erro ao listar mensagens enviadas:", error);
+                if (callback) callback({ erro: "Erro ao buscar mensagens enviadas", detalhes: error.message });
+            }
+        });
+
+        socket.on("buscarMensagemPorId", async (args, callback) => {
+            try {
+                const { id } = args;
+                const mensagem = await mongoService.buscarMensagemPorId(id);
+                if (callback) callback({ sucesso: true, dados: mensagem });
+            } catch (error) {
+                console.error("Erro ao buscar mensagem por ID:", error);
+                if (callback) callback({ erro: "Erro ao buscar mensagem", detalhes: error.message });
+            }
         });
     });
 })();

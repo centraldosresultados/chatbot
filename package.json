@@ -28,6 +28,7 @@
     "fs": "^0.0.1-security",
     "js-base64": "^3.7.3",
     "jsdoc": "^4.0.2",
+    "mongodb": "^6.17.0",
     "mysql": "^2.18.1",
     "node-localstorage": "^3.0.4",
     "npm-check-updates": "^16.10.17",

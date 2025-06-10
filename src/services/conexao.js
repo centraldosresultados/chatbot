@@ -88,14 +88,62 @@ const buscarSolicitacao = (chave, callback) => {
 
 const buscaTodosCriadores = () => {
   return new Promise((resolve) => {
-    const sql = "SELECT chave_cadastro, nome, tel_1 FROM view_criadores"; // Query SQL para buscar todos os criadores
+    const sql = "SELECT chave_cadastro, nome, tel_1, data_cadastro, status_cadastro FROM view_criadores where disponivel in('A', 'S') ORDER BY nome"; // Query SQL para buscar todos os criadores
+    console.log(sql);
+    
     con.query(sql, (erro, dados) => {
       if (erro) {
         console.error("Erro ao buscar criadores no MySQL:", erro); // Log do erro
         resolve(null, erro); // Chama o callback com null para dados e o objeto de erro
         return;
       }
-      resolve(dados); // Chama o callback com os dados encontrados
+      // Formatar os dados para incluir código, nome, telefone, data_cadastro e status_cadastro
+      const criadoresFormatados = dados.map(criador => ({
+        codigo: criador.chave_cadastro,
+        nome: criador.nome,
+        telefone: criador.tel_1,
+        data_cadastro: criador.data_cadastro,
+        status_cadastro: criador.status_cadastro,
+        status_mensagem: 'Não enviado' // Status inicial
+      }));
+      resolve(criadoresFormatados); // Retorna os dados formatados
+    });
+  });
+}
+
+/**
+ * Busca criadores selecionados por códigos
+ * @param {Array} codigos - Array de códigos dos criadores
+ * @returns {Promise<Array>} Array de criadores encontrados
+ */
+const buscarCriadoresSelecionados = (codigos) => {
+  return new Promise((resolve) => {
+    if (!codigos || codigos.length === 0) {
+      resolve([]);
+      return;
+    }
+
+    const codigosEscapados = codigos.map(codigo => mysql.escape(codigo)).join(',');
+    const sql = `SELECT chave_cadastro, nome, tel_1, data_cadastro, status_cadastro FROM view_criadores WHERE chave_cadastro IN (${codigosEscapados}) ORDER BY nome`;
+    
+    con.query(sql, (erro, dados) => {
+      if (erro) {
+        console.error("Erro ao buscar criadores selecionados no MySQL:", erro);
+        resolve([]);
+        return;
+      }
+      
+      const criadoresFormatados = dados.map(criador => ({
+        codigo_criador: criador.chave_cadastro,
+        codigo: criador.chave_cadastro,
+        nome: criador.nome,
+        telefone: criador.tel_1,
+        data_cadastro: criador.data_cadastro,
+        status_cadastro: criador.status_cadastro,
+        status_mensagem: 'Não enviado'
+      }));
+      
+      resolve(criadoresFormatados);
     });
   });
 }
@@ -104,7 +152,8 @@ module.exports = {
   buscarSolicitacao, // Exporta a função para buscar no MySQL
   salvarSolicitacaoFB, // Exporta a função para salvar no Firebase
   buscarSolicitacaoFB, // Exporta a função para buscar no Firebase
-  buscaTodosCriadores
+  buscaTodosCriadores,
+  buscarCriadoresSelecionados
 };
 
 
