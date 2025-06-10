@@ -43,7 +43,8 @@ function testarCredenciais() {
     console.log('✅ Credenciais corretas:', teste1 ? 'VÁLIDAS' : 'INVÁLIDAS');
     
     // Teste 2: Credenciais incorretas
-    const teste2 = !('admin' === 'chatbot' && '123' === 'criadores');
+    const credenciaisIncorretas = { login: 'admin', senha: '123' };
+    const teste2 = !(credenciaisIncorretas.login === 'chatbot' && credenciaisIncorretas.senha === 'criadores');
     console.log('✅ Rejeição credenciais incorretas:', teste2 ? 'FUNCIONA' : 'FALHA');
 }
 

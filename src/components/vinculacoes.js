@@ -95,72 +95,74 @@ const tabela = "vinculacoes_solicitacoes"; // Nome da tabela/nó no Firebase par
      * @returns {Promise<Object>} Um objeto indicando sucesso ou falha.
      */
     async enviarSolicitacao(parametros) {
-      return new Promise(async (resolve) => { // Removido reject pois não estava sendo usado e erros são logados.
-        try {
-          // Busca os dados do pássaro na API backend.
-          const retornoApi = await executaFuncaoClasse(
-            "centralCriadores",
-            "buscarPassaroVinculacaoSolicitacao",
-            parametros,
-          );
-
-          if (!retornoApi || retornoApi.erro) {
-            console.error("Erro ao buscar dados do pássaro na API:", retornoApi ? retornoApi.erro : "Retorno vazio");
-            resolve({ erro: "Falha ao buscar dados para solicitação." });
-            return;
-          }
-
-          const dadosMensagem = montaMensagemVinculacaoConfirmacao(retornoApi); // Monta a mensagem a ser enviada.
-
-          // Envia a solicitação para cada contato de confirmação.
-          for (const item of contatosConfirmacao) {
-            const contatoEnviar = item.telefone;
-
-            // Envia a mensagem de texto principal.
-            const mensagemEnviada = await conexaoBot.enviarMensagem(
-              contatoEnviar,
-              dadosMensagem.texto,
+      return new Promise((resolve) => { // Removido reject pois não estava sendo usado e erros são logados.
+        (async () => {
+          try {
+            // Busca os dados do pássaro na API backend.
+            const retornoApi = await executaFuncaoClasse(
+              "centralCriadores",
+              "buscarPassaroVinculacaoSolicitacao",
+              parametros,
             );
 
-            if (!mensagemEnviada || !mensagemEnviada.id) {
-              console.error(`Falha ao enviar mensagem de texto para ${contatoEnviar}`);
-              continue; // Pula para o próximo contato em caso de falha no envio da mensagem principal
+            if (!retornoApi || retornoApi.erro) {
+              console.error("Erro ao buscar dados do pássaro na API:", retornoApi ? retornoApi.erro : "Retorno vazio");
+              resolve({ erro: "Falha ao buscar dados para solicitação." });
+              return;
             }
-            console.log("Retorno Mensagem para", contatoEnviar, ":", mensagemEnviada.id);
 
-            // Envia imagens, se existirem.
-            if (dadosMensagem.placaIdentifcacao && dadosMensagem.placaIdentifcacao.imagem) {
-              await conexaoBot.enviarMensagem(
+            const dadosMensagem = montaMensagemVinculacaoConfirmacao(retornoApi); // Monta a mensagem a ser enviada.
+
+            // Envia a solicitação para cada contato de confirmação.
+            for (const item of contatosConfirmacao) {
+              const contatoEnviar = item.telefone;
+
+              // Envia a mensagem de texto principal.
+              const mensagemEnviada = await conexaoBot.enviarMensagem(
                 contatoEnviar,
-                "", // Sem texto adicional para a imagem
-                dadosMensagem.placaIdentifcacao.imagem,
+                dadosMensagem.texto,
               );
-            }
-            if (dadosMensagem.relacaoSispass && dadosMensagem.relacaoSispass.imagem) {
-              await conexaoBot.enviarMensagem(
-                contatoEnviar,
-                "", // Sem texto adicional para a imagem
-                dadosMensagem.relacaoSispass.imagem,
-              );
-            }
 
-            // Prepara o objeto para salvar no Firebase.
-            const insereFB = {
-              idM: mensagemEnviada.id, // ID da mensagem do WhatsApp enviada.
-              numero: contatoEnviar,    // Número para o qual a mensagem foi enviada.
-              acao: "confirmacaoVinculacao",
-              codigo_vinculacao: parametros, // Dados originais da solicitação.
-              autorizada: false, // Status inicial.
-              respondida: false, // Status inicial.
-            };
+              if (!mensagemEnviada || !mensagemEnviada.id) {
+                console.error(`Falha ao enviar mensagem de texto para ${contatoEnviar}`);
+                continue; // Pula para o próximo contato em caso de falha no envio da mensagem principal
+              }
+              console.log("Retorno Mensagem para", contatoEnviar, ":", mensagemEnviada.id);
 
-            await salvarSolicitacaoFB(insereFB); // Salva a solicitação no Firebase.
+              // Envia imagens, se existirem.
+              if (dadosMensagem.placaIdentifcacao && dadosMensagem.placaIdentifcacao.imagem) {
+                await conexaoBot.enviarMensagem(
+                  contatoEnviar,
+                  "", // Sem texto adicional para a imagem
+                  dadosMensagem.placaIdentifcacao.imagem,
+                );
+              }
+              if (dadosMensagem.relacaoSispass && dadosMensagem.relacaoSispass.imagem) {
+                await conexaoBot.enviarMensagem(
+                  contatoEnviar,
+                  "", // Sem texto adicional para a imagem
+                  dadosMensagem.relacaoSispass.imagem,
+                );
+              }
+
+              // Prepara o objeto para salvar no Firebase.
+              const insereFB = {
+                idM: mensagemEnviada.id, // ID da mensagem do WhatsApp enviada.
+                numero: contatoEnviar,    // Número para o qual a mensagem foi enviada.
+                acao: "confirmacaoVinculacao",
+                codigo_vinculacao: parametros, // Dados originais da solicitação.
+                autorizada: false, // Status inicial.
+                respondida: false, // Status inicial.
+              };
+
+              await salvarSolicitacaoFB(insereFB); // Salva a solicitação no Firebase.
+            }
+            resolve({ sucesso: "Solicitação Enviada, Aguarde a confirmação." });
+          } catch (error) {
+            console.error("Erro ao enviar solicitação de vinculação:", error);
+            resolve({ erro: "Ocorreu um erro interno ao processar a solicitação." });
           }
-          resolve({ sucesso: "Solicitação Enviada, Aguarde a confirmação." });
-        } catch (error) {
-          console.error("Erro ao enviar solicitação de vinculação:", error);
-          resolve({ erro: "Ocorreu um erro interno ao processar a solicitação." });
-        }
+        })();
       });
     },
 

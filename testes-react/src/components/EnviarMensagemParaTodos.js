@@ -147,9 +147,9 @@ function EnviarMensagemParaTodos({ socket, setResponseArea }) {
         {loading ? (
           <p>Carregando criadores...</p>
         ) : criadores.length === 0 ? (
-          <p>Nenhum criador encontrado. Clique em "Atualizar Lista" para carregar.</p>
+          <p>Nenhum criador encontrado. Clique em &quot;Atualizar Lista&quot; para carregar.</p>
         ) : criadoresFiltrados.length === 0 ? (
-          <p>Nenhum criador encontrado com o filtro "{filtro}". Tente outro termo de busca.</p>
+          <p>Nenhum criador encontrado com o filtro &quot;{filtro}&quot;. Tente outro termo de busca.</p>
         ) : (
           <div className="criadores-grid">
             {criadoresFiltrados.map((criador) => (

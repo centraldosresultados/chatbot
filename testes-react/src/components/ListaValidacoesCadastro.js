@@ -56,7 +56,7 @@ function ListaValidacoesCadastro({ socket, setResponseArea }) {
       {loading ? (
         <p>Carregando validações...</p>
       ) : validacoes.length === 0 ? (
-        <p>Nenhuma validação encontrada. Clique em "Atualizar Lista" para carregar.</p>
+        <p>Nenhuma validação encontrada. Clique em &quot;Atualizar Lista&quot; para carregar.</p>
       ) : (
         <div className="table-container">
           <table className="data-table">

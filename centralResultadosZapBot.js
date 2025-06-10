@@ -25,9 +25,6 @@ const { conexaoIo } = require("./src/services/socket");
 const { vinculacaoes } = require("./src/components/vinculacoes");
 const { notificaAdministrador, notificaConexao } = require('./src/helpers/notificaAdministrador');
 
-const http = require('http'); // Required for serving the HTML file
-const fs = require('fs'); // Required for reading the HTML file
-const path = require('path'); // Required for path manipulation
 const { contatosConfirmacao } = require("./src/config");
 const { buscaTodosCriadores, buscarCriadoresSelecionados } = require("./src/services/conexao");
 const mongoService = require("./src/services/mongodb");
@@ -69,7 +66,6 @@ const montaContato = async (clientBot) => {
 
 
     await conexaoBot.pegaClientBot(); // Prepara o cliente do WhatsApp.
-    monitorarDesconexao(); // Inicia o monitoramento de desconexão
     vinculacaoes.populaVinculacoes(); // Carrega as vinculações pendentes.
 
     /**
@@ -162,7 +158,7 @@ const montaContato = async (clientBot) => {
                 for (const tabela of tabelas) {
                     try {
                         await mongoService.atualizarStatusMensagem(tabela, id, novoStatus);
-                    } catch (error) {
+                    } catch {
                         // Erro silencioso - nem todas as mensagens estarão em todas as tabelas
                         console.log(`[MongoDB] Mensagem ${id} não encontrada em ${tabela}`);
                     }
@@ -494,41 +490,44 @@ const montaContato = async (clientBot) => {
                 if (callback) callback({ erro: "Erro ao buscar mensagem", detalhes: error.message });
             }
         });
+
+        /**
+         * Função para monitorar e tentar reconectar ao WhatsApp em caso de desconexão.
+         * @param {string} nomeSessao
+         * @param {string} tipoInicializacao
+         */
+        const monitorarDesconexao = (nomeSessao = '', tipoInicializacao = 'padrao') => {
+            if (!conexaoBot.clientBot) return;
+            conexaoBot.clientBot.on('disconnected', async (reason) => {
+                console.error('WhatsApp desconectado:', reason);
+                if (socket) socket.emit('mudancaStatus', { Conectado: false, status: 'Desconectado', motivo: reason });
+                // Notifica o administrador
+                await notificaAdministrador('Desconexão do WhatsApp', reason);
+                setTimeout(async () => {
+                    try {
+                        console.log('Tentando reconectar ao WhatsApp...');
+                        await conectarZapBot(nomeSessao, tipoInicializacao);
+                    } catch (err) {
+                        console.error('Erro ao tentar reconectar:', err);
+                        await notificaAdministrador('Falha ao tentar reconectar ao WhatsApp', err.message || err);
+                    }
+                }, 5000);
+            });
+        };
+
+        // Inicia o monitoramento de desconexão
+        monitorarDesconexao();
     });
 })();
 
 //*/
-
-/**
- * Função para monitorar e tentar reconectar ao WhatsApp em caso de desconexão.
- * @param {string} nomeSessao
- * @param {string} tipoInicializacao
- */
-const monitorarDesconexao = (nomeSessao = '', tipoInicializacao = 'padrao') => {
-    if (!conexaoBot.clientBot) return;
-    conexaoBot.clientBot.on('disconnected', async (reason) => {
-        console.error('WhatsApp desconectado:', reason);
-        if (socket) socket.emit('mudancaStatus', { Conectado: false, status: 'Desconectado', motivo: reason });
-        // Notifica o administrador
-        await notificaAdministrador('Desconexão do WhatsApp', reason);
-        setTimeout(async () => {
-            try {
-                console.log('Tentando reconectar ao WhatsApp...');
-                await conectarZapBot(nomeSessao, tipoInicializacao);
-            } catch (err) {
-                console.error('Erro ao tentar reconectar:', err);
-                await notificaAdministrador('Falha ao tentar reconectar ao WhatsApp', err.message || err);
-            }
-        }, 5000);
-    });
-};
 
 // Tratamento global de exceções para evitar que a aplicação seja derrubada por erros não tratados.
 process.on('uncaughtException', async (err) => {
     console.error('Exceção não capturada:', err);
     await notificaAdministrador('Exceção não capturada', err.message || err);
 });
-process.on('unhandledRejection', async (reason, promise) => {
+process.on('unhandledRejection', async (reason) => {
     console.error('Promise rejeitada não tratada:', reason);
     await notificaAdministrador('Promise rejeitada não tratada', reason && reason.message ? reason.message : String(reason));
 });

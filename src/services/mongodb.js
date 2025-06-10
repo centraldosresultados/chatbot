@@ -93,7 +93,7 @@ class MongoDBService {
                         if (this.client) {
                             try {
                                 await this.client.close();
-                            } catch (e) {
+                            } catch {
                                 // Ignorar erro ao fechar
                             }
                             this.client = null;
@@ -125,7 +125,7 @@ class MongoDBService {
                         if (this.client) {
                             try {
                                 await this.client.close();
-                            } catch (closeError) {
+                            } catch {
                                 // Ignorar erros ao fechar
                             }
                             this.client = null;

@@ -56,7 +56,7 @@ function ListaEnviosSenhas({ socket, setResponseArea }) {
       {loading ? (
         <p>Carregando envios...</p>
       ) : envios.length === 0 ? (
-        <p>Nenhum envio de senha encontrado. Clique em "Atualizar Lista" para carregar.</p>
+        <p>Nenhum envio de senha encontrado. Clique em &quot;Atualizar Lista&quot; para carregar.</p>
       ) : (
         <div className="table-container">
           <table className="data-table">

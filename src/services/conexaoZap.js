@@ -1,5 +1,4 @@
 const { Client, MessageMedia, LocalAuth } = require("whatsapp-web.js");
-const { conexaoIo } = require("./socket");
 const { pegaIdContatoConfirmacao } = require("../config");
 //const { vinculacaoes } = require('../components/vinculacoes');
 
@@ -356,7 +355,7 @@ const { pegaIdContatoConfirmacao } = require("../config");
      * @param {string} id - ID da mensagem a ser removida.
      */
     delMensagem(id) {
-      if (this.mensagens.hasOwnProperty(id)) {
+      if (Object.prototype.hasOwnProperty.call(this.mensagens, id)) {
         delete this.mensagens[id];
       }
     },

@@ -82,7 +82,7 @@ async function testarConexao(uri, config) {
         if (client) {
             try {
                 await client.close();
-            } catch (e) {
+            } catch {
                 // Ignorar erro ao fechar
             }
         }

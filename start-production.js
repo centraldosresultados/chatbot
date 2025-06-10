@@ -49,7 +49,7 @@ class BotManager {
             this.log('ERROR', `Exceção não capturada: ${error.message}`);
             this.shutdown('UNCAUGHT_EXCEPTION');
         });
-        process.on('unhandledRejection', (reason, promise) => {
+        process.on('unhandledRejection', (reason) => {
             this.log('ERROR', `Promise rejeitada: ${reason}`);
         });
     }

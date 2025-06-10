@@ -14,7 +14,7 @@ async function testarSistemaEnvio() {
     try {
         // Obtém o cliente bot
         console.log('📱 Inicializando cliente WhatsApp...');
-        const client = await conexaoBot.pegaClientBot();
+        await conexaoBot.pegaClientBot();
         console.log('✅ Cliente inicializado com sucesso\n');
         
         // Teste 1: Validação de números
