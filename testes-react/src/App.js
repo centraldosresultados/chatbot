@@ -19,7 +19,11 @@ function App() {
   const [responseArea, setResponseArea] = useState('');
   const [qrCode, setQrCode] = useState('');
   const [status, setStatus] = useState({});
-  const [activeTab, setActiveTab] = useState('enviarMensagem');
+  const [activeTab, setActiveTab] = useState('chat');
+  
+  // Estados para controlar expansão/compressão
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [isLogsCollapsed, setIsLogsCollapsed] = useState(false);
   
   // Estados do sistema de login
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -141,100 +145,166 @@ function App() {
           
           <div className="main-layout">
         {/* Menu Lateral */}
-        <nav className="sidebar">
+        <nav className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
           <div className="sidebar-header">
-            <h3>Menu Principal</h3>
+            <h3>{isSidebarCollapsed ? '' : 'Menu Principal'}</h3>
+            <button 
+              className="collapse-toggle"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              title={isSidebarCollapsed ? 'Expandir Menu' : 'Comprimir Menu'}
+            >
+              {isSidebarCollapsed ? '→' : '←'}
+            </button>
           </div>
           
-          <ul className="sidebar-menu">
-            <li>
-              <button 
-                className={activeTab === 'chat' ? 'active' : ''} 
-                onClick={() => setActiveTab('chat')}
-              >
-                💬 Chat WhatsApp
-              </button>
-            </li>
-            <li>
-              <button 
-                className={activeTab === 'enviarMensagem' ? 'active' : ''} 
-                onClick={() => setActiveTab('enviarMensagem')}
-              >
-                📧 Enviar Mensagem Para Todos
-              </button>
-            </li>
-            <li>
-              <button 
-                className={activeTab === 'validacaoCadastro' ? 'active' : ''} 
-                onClick={() => setActiveTab('validacaoCadastro')}
-              >
-                ✅ Validação de Cadastro
-              </button>
-            </li>
-            <li>
-              <button 
-                className={activeTab === 'senhaProvisoria' ? 'active' : ''} 
-                onClick={() => setActiveTab('senhaProvisoria')}
-              >
-                🔑 Senha Provisória Criador
-              </button>
-            </li>
-            <li>
-              <button 
-                className={activeTab === 'listaValidacoes' ? 'active' : ''} 
-                onClick={() => setActiveTab('listaValidacoes')}
-              >
-                📋 Lista Validações Cadastro
-              </button>
-            </li>
-            <li>
-              <button 
-                className={activeTab === 'listaEnviosSenhas' ? 'active' : ''} 
-                onClick={() => setActiveTab('listaEnviosSenhas')}
-              >
-                📄 Lista Envios de Senhas
-              </button>
-            </li>
-            <li>
-              <button 
-                className={activeTab === 'listaMensagens' ? 'active' : ''} 
-                onClick={() => setActiveTab('listaMensagens')}
-              >
-                💬 Lista Mensagens Enviadas
-              </button>
-            </li>
-          </ul>
+          {!isSidebarCollapsed && (
+            <>
+              <ul className="sidebar-menu">
+                <li>
+                  <button 
+                    className={activeTab === 'chat' ? 'active' : ''} 
+                    onClick={() => setActiveTab('chat')}
+                  >
+                    💬 Chat WhatsApp
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    className={activeTab === 'enviarMensagem' ? 'active' : ''} 
+                    onClick={() => setActiveTab('enviarMensagem')}
+                  >
+                    📧 Enviar Mensagem Para Todos
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    className={activeTab === 'validacaoCadastro' ? 'active' : ''} 
+                    onClick={() => setActiveTab('validacaoCadastro')}
+                  >
+                    ✅ Validação de Cadastro
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    className={activeTab === 'senhaProvisoria' ? 'active' : ''} 
+                    onClick={() => setActiveTab('senhaProvisoria')}
+                  >
+                    🔑 Senha Provisória Criador
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    className={activeTab === 'listaValidacoes' ? 'active' : ''} 
+                    onClick={() => setActiveTab('listaValidacoes')}
+                  >
+                    📋 Lista Validações Cadastro
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    className={activeTab === 'listaEnviosSenhas' ? 'active' : ''} 
+                    onClick={() => setActiveTab('listaEnviosSenhas')}
+                  >
+                    📄 Lista Envios de Senhas
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    className={activeTab === 'listaMensagens' ? 'active' : ''} 
+                    onClick={() => setActiveTab('listaMensagens')}
+                  >
+                    💬 Lista Mensagens Enviadas
+                  </button>
+                </li>
+              </ul>
 
-          {/* Controles WhatsApp no Menu Lateral */}
-          <div className="whatsapp-controls">
-            <h4>Conexão WhatsApp</h4>
-            <div className="control-buttons">
-              <button onClick={() => socket && socket.emit('conectarZap', 'react-test-session', (res) => setResponseArea(prev => prev + res + '\n'))} disabled={!socket}>
-                Conectar
+              {/* Controles WhatsApp no Menu Lateral */}
+              <div className="whatsapp-controls">
+                <h4>Conexão WhatsApp</h4>
+                <div className="control-buttons">
+                  <button onClick={() => socket && socket.emit('conectarZap', 'react-test-session', (res) => setResponseArea(prev => prev + res + '\n'))} disabled={!socket}>
+                    Conectar
+                  </button>
+                  <button onClick={() => socket && socket.emit('desconectarZap', {}, (res) => setResponseArea(prev => prev + res + '\n'))} disabled={!socket}>
+                    Desconectar
+                  </button>
+                  <button onClick={() => socket && socket.emit('verificarConexaoZap', {}, (res) => {
+                    setResponseArea(prev => prev + `Status: ${JSON.stringify(res, null, 2)}\n`);
+                    setStatus(res);
+                  })} disabled={!socket}>
+                    Verificar
+                  </button>
+                </div>
+                {status && status.Conectado && (
+                  <div className="status-info">
+                    <p>✅ {status.status}</p>
+                    <p>📱 {status.telefone}</p>
+                  </div>
+                )}
+                {qrCode && (
+                  <div className="qr-code">
+                    <p>Escaneie o QR Code:</p>
+                    <img src={qrCode} alt="QR Code" />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+          
+          {/* Menu comprimido - apenas ícones */}
+          {isSidebarCollapsed && (
+            <div className="sidebar-collapsed-menu">
+              <button 
+                className={`icon-button ${activeTab === 'chat' ? 'active' : ''}`}
+                onClick={() => setActiveTab('chat')}
+                title="Chat WhatsApp"
+              >
+                💬
               </button>
-              <button onClick={() => socket && socket.emit('desconectarZap', {}, (res) => setResponseArea(prev => prev + res + '\n'))} disabled={!socket}>
-                Desconectar
+              <button 
+                className={`icon-button ${activeTab === 'enviarMensagem' ? 'active' : ''}`}
+                onClick={() => setActiveTab('enviarMensagem')}
+                title="Enviar Mensagem Para Todos"
+              >
+                📧
               </button>
-              <button onClick={() => socket && socket.emit('verificarConexaoZap', {}, (res) => {
-                setResponseArea(prev => prev + `Status: ${JSON.stringify(res, null, 2)}\n`);
-                setStatus(res);
-              })} disabled={!socket}>
-                Verificar
+              <button 
+                className={`icon-button ${activeTab === 'validacaoCadastro' ? 'active' : ''}`}
+                onClick={() => setActiveTab('validacaoCadastro')}
+                title="Validação de Cadastro"
+              >
+                ✅
+              </button>
+              <button 
+                className={`icon-button ${activeTab === 'senhaProvisoria' ? 'active' : ''}`}
+                onClick={() => setActiveTab('senhaProvisoria')}
+                title="Senha Provisória Criador"
+              >
+                🔑
+              </button>
+              <button 
+                className={`icon-button ${activeTab === 'listaValidacoes' ? 'active' : ''}`}
+                onClick={() => setActiveTab('listaValidacoes')}
+                title="Lista Validações Cadastro"
+              >
+                📋
+              </button>
+              <button 
+                className={`icon-button ${activeTab === 'listaEnviosSenhas' ? 'active' : ''}`}
+                onClick={() => setActiveTab('listaEnviosSenhas')}
+                title="Lista Envios de Senhas"
+              >
+                📄
+              </button>
+              <button 
+                className={`icon-button ${activeTab === 'listaMensagens' ? 'active' : ''}`}
+                onClick={() => setActiveTab('listaMensagens')}
+                title="Lista Mensagens Enviadas"
+              >
+                💬
               </button>
             </div>
-            {status && status.Conectado && (
-              <div className="status-info">
-                <p>✅ {status.status}</p>
-                <p>📱 {status.telefone}</p>
-              </div>
-            )}
-            {qrCode && (
-              <div className="qr-code">
-                <p>Escaneie o QR Code:</p>
-                <img src={qrCode} alt="QR Code" />
-              </div>
-            )}
-          </div>
+          )}
         </nav>
 
         {/* Conteúdo Principal */}
@@ -263,17 +333,31 @@ function App() {
         </main>
         </div>
 
-        {/* Área de Resposta - Agora fixa na parte inferior */}
-        <div className="response-area-container">
+        {/* Área de Resposta - Agora fixa na parte inferior com expansão/compressão */}
+        <div className={`response-area-container ${isLogsCollapsed ? 'collapsed' : ''}`}>
           <div className="response-area">
-            <h3>Log do Sistema:</h3>
-            <pre>{responseArea}</pre>
-            <button 
-              className="clear-log" 
-              onClick={() => setResponseArea('')}
-            >
-              Limpar Log
-            </button>
+            <div className="response-header">
+              <h3>{isLogsCollapsed ? 'Logs' : 'Log do Sistema:'}</h3>
+              <button 
+                className="collapse-toggle"
+                onClick={() => setIsLogsCollapsed(!isLogsCollapsed)}
+                title={isLogsCollapsed ? 'Expandir Logs' : 'Comprimir Logs'}
+              >
+                {isLogsCollapsed ? '↑' : '↓'}
+              </button>
+            </div>
+            
+            {!isLogsCollapsed && (
+              <>
+                <pre>{responseArea}</pre>
+                <button 
+                  className="clear-log" 
+                  onClick={() => setResponseArea('')}
+                >
+                  Limpar Log
+                </button>
+              </>
+            )}
           </div>
         </div>
         </div>

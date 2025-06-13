@@ -157,12 +157,26 @@
   border-right: 1px solid #dee2e6;
   padding: 20px;
   overflow-y: auto;
+  transition: width 0.3s ease, padding 0.3s ease;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+  padding: 20px 10px;
 }
 
 .sidebar-header {
   margin-bottom: 20px;
   padding-bottom: 15px;
   border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  margin-bottom: 10px;
 }
 
 .sidebar-header h3 {
@@ -267,6 +281,12 @@
   border-top: 1px solid #dee2e6;
   padding: 15px 20px;
   max-height: 200px;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.response-area-container.collapsed {
+  max-height: 50px;
+  padding: 10px 20px;
 }
 
 .response-area {
@@ -806,6 +826,120 @@ img {
   color: #495057;
 }
 
+/* Estilos para sistema de expansão/compressão */
+
+/* Botão de colapsar/expandir */
+.collapse-toggle {
+  background: none;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #495057;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collapse-toggle:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+}
+
+/* Menu Lateral - Estados Normal e Comprimido */
+.sidebar {
+  width: 280px;
+  background-color: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  padding: 20px;
+  overflow-y: auto;
+  transition: width 0.3s ease, padding 0.3s ease;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+  padding: 20px 10px;
+}
+
+.sidebar-header {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+/* Menu comprimido - apenas ícones */
+.sidebar-collapsed-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-button:hover {
+  background-color: #e9ecef;
+  color: #007bff;
+  border-color: #dee2e6;
+}
+
+.icon-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+/* Área de Logs - Estados Normal e Comprimido */
+.response-area-container {
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  padding: 15px 20px;
+  max-height: 200px;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.response-area-container.collapsed {
+  max-height: 50px;
+  padding: 10px 20px;
+}
+
+.response-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.response-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #495057;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .app-layout {
@@ -838,11 +972,36 @@ img {
 
 /* Estilos específicos para o Chat WhatsApp quando usado no main-content */
 .main-content .whatsapp-chat {
-  height: calc(100vh - 140px); /* Altura ajustada para caber no layout */
-  margin: -20px; /* Remove o padding do main-content para ocupar toda a área */
+  height: calc(100vh - 180px); /* Altura ajustada para caber no layout com mais margem */
+  margin: 0; /* Remove margem negativa para melhor encaixe */
+  border-radius: 8px; /* Adiciona bordas arredondadas */
+  overflow: hidden; /* Garante que o conteúdo não vaze */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Adiciona sombra sutil */
 }
 
-/* Ajustes para integração com o layout existente */
-.main-content:has(.whatsapp-chat) {
-  padding: 0; /* Remove padding quando chat está ativo */
+/* Ajustes específicos para quando o sidebar está comprimido */
+.sidebar.collapsed + .main-content .whatsapp-chat {
+  height: calc(100vh - 180px); /* Mantém a mesma altura */
+  max-width: calc(100vw - 110px); /* Ajusta largura máxima considerando sidebar comprimido */
+}
+
+/* Ajustes responsivos para o chat */
+.main-content .whatsapp-chat .chat-sidebar {
+  min-width: 280px; /* Garante largura mínima da sidebar do chat */
+}
+
+.main-content .whatsapp-chat .chat-main {
+  flex: 1;
+  min-width: 0; /* Permite que o flex funcione corretamente */
+}
+
+/* Ajustes para dispositivos menores */
+@media (max-width: 1200px) {
+  .main-content .whatsapp-chat {
+    height: calc(100vh - 160px);
+  }
+  
+  .main-content .whatsapp-chat .chat-sidebar {
+    min-width: 250px;
+  }
 }

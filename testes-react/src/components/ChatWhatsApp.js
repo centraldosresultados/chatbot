@@ -89,14 +89,28 @@ const ChatWhatsApp = ({ socket, setResponseArea }) => {
     const handleMessageStatus = (statusData) => {
       const { messageId, status } = statusData;
       
+      console.log('Status atualizado:', statusData); // Debug
+      
       // Atualizar status da mensagem nas conversas
       setConversations(prev => {
         const updated = { ...prev };
+        let found = false;
+        
         Object.keys(updated).forEach(contactId => {
-          updated[contactId] = updated[contactId].map(msg => 
-            msg.id === messageId ? { ...msg, status } : msg
-          );
+          updated[contactId] = updated[contactId].map(msg => {
+            // Verificar tanto pelo ID original quanto pelo ID do WhatsApp
+            if (msg.id === messageId || msg.whatsappId === messageId) {
+              found = true;
+              return { ...msg, status };
+            }
+            return msg;
+          });
         });
+        
+        if (found) {
+          setResponseArea(prev => prev + `Status da mensagem atualizado para: ${status}\n`);
+        }
+        
         return updated;
       });
     };
@@ -241,6 +255,8 @@ const ChatWhatsApp = ({ socket, setResponseArea }) => {
     };
     
     socket.emit('enviarMensagem', messageData, (response) => {
+      console.log('Resposta do servidor:', response); // Debug
+      
       if (response.erro) {
         // Atualizar status da mensagem para erro
         setConversations(prev => ({
@@ -253,16 +269,19 @@ const ChatWhatsApp = ({ socket, setResponseArea }) => {
         }));
         setResponseArea(prev => prev + `Erro ao enviar mensagem para ${selectedContact.name}: ${response.erro}\n`);
       } else {
-        // Atualizar status da mensagem para enviada
+        // Atualizar status da mensagem para enviada e armazenar o ID do WhatsApp
+        const whatsappMessageId = response.id;
+        console.log('ID da mensagem do WhatsApp:', whatsappMessageId); // Debug
+        
         setConversations(prev => ({
           ...prev,
           [selectedContact.id]: prev[selectedContact.id].map(msg => 
             msg.id === newMessage.id 
-              ? { ...msg, status: 'sent', id: response.id }
+              ? { ...msg, status: 'sent', whatsappId: whatsappMessageId }
               : msg
           )
         }));
-        setResponseArea(prev => prev + `Mensagem enviada para ${selectedContact.name}: ${response.sucesso || 'Sucesso'}\n`);
+        setResponseArea(prev => prev + `Mensagem enviada para ${selectedContact.name}. ID: ${whatsappMessageId}\n`);
       }
     });
   };
@@ -417,8 +436,8 @@ const ChatWhatsApp = ({ socket, setResponseArea }) => {
               <button 
                 className="send-button"
                 onClick={sendMessage}
-                disabled={!messageText.trim() || !whatsappStatus.connected}
-                title={!whatsappStatus.connected ? 'WhatsApp não conectado' : 'Enviar mensagem'}
+                disabled={!messageText.trim()}
+                title={!messageText.trim() ? 'Digite uma mensagem' : 'Enviar mensagem'}
               >
                 {messageText.trim() ? '➤' : '🎤'}
               </button>
