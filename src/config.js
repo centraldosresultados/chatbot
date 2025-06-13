@@ -37,9 +37,9 @@
 //         // Para ambiente de produção, usar:
 //         // uri: 'mongodb+srv://usuario:senha@cluster.mongodb.net/central-mensagens'
 //     },
-//     caminhoImagens: "http://centralsite.com", // URL base para buscar imagens
-//     caminhoApi: "http://centralsistema.com/api/centralCriadores", // URL da API principal
-//     logo: "/img/logoMobile.png", // Caminho relativo para a logo
+//     caminhoImagens: 'https://centraldosresultados.com',
+//     caminhoApi: 'https://centraldosresultados.com/api/centralCriadores',
+//     logo: '/img/logoMobile.png'
 
 //     // Exemplo de configuração para ambiente web (comentado)
 //     // caminhoImagens: 'https://itaperuna.net.br',
@@ -49,7 +49,7 @@
 
 //Exemplo de configuração alternativa para ambiente web (comentado)
 const configuracoes = {
-    funcionamento: 'local', // Mudado para local para desenvolvimento
+    funcionamento: 'web',
     porta: 3100,
     dataBase: {
         host: 'centraldosresultados.com',

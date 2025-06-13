@@ -11,8 +11,8 @@ import ChatWhatsApp from './components/ChatWhatsApp';
 
 // Connect to the Socket.io server.
 // Replace with your server's URL if it's different.
-const SOCKET_SERVER_URL = 'http://localhost:3100';
-//const SOCKET_SERVER_URL = 'https://chatbot.centraldosresultados.com:3100';
+//const SOCKET_SERVER_URL = 'http://localhost:3100';
+const SOCKET_SERVER_URL = 'https://chatbot.centraldosresultados.com:3100';
 
 function App() {
   const [socket, setSocket] = useState(null);

@@ -19,17 +19,39 @@ const ChatWhatsApp = ({ socket, setResponseArea }) => {
     scrollToBottom();
   }, [selectedContact, conversations]);
 
+  // Verificar status inicial do WhatsApp quando o socket conectar
+  useEffect(() => {
+    if (!socket) return;
+
+    // Verificar status inicial
+    socket.emit('verificarConexaoZap', {}, (response) => {
+      if (response && response.Conectado) {
+        setWhatsappStatus({
+          connected: true,
+          info: response
+        });
+        setResponseArea(prev => prev + `Status inicial: WhatsApp Conectado - ${response.telefone}\n`);
+      }
+    });
+  }, [socket, setResponseArea]);
+
   // Socket listeners para mensagens em tempo real
   useEffect(() => {
     if (!socket) return;
 
     // Listener para status do WhatsApp
     const handleStatusChange = (status) => {
+      console.log('Status recebido no ChatWhatsApp:', status); // Debug
+      
+      const isConnected = status.Conectado === true || status.connected === true;
+      
       setWhatsappStatus({
-        connected: status.Conectado || false,
+        connected: isConnected,
         info: status
       });
-      setResponseArea(prev => prev + `WhatsApp Status: ${status.status}\n`);
+      
+      const statusText = isConnected ? 'Conectado' : 'Desconectado';
+      setResponseArea(prev => prev + `WhatsApp Status: ${statusText} - ${JSON.stringify(status)}\n`);
     };
 
     // Listener para mensagens recebidas em tempo real
@@ -329,10 +351,6 @@ const ChatWhatsApp = ({ socket, setResponseArea }) => {
               </div>
             </div>
           </div>
-          <div className="header-actions">
-            <button className="icon-btn" title="Nova conversa">💬</button>
-            <button className="icon-btn" title="Configurações">⚙️</button>
-          </div>
         </div>
 
         <div className="search-box">
@@ -390,12 +408,6 @@ const ChatWhatsApp = ({ socket, setResponseArea }) => {
                     {whatsappStatus.connected ? 'WhatsApp Ativo' : 'WhatsApp Inativo'}
                   </span>
                 </div>
-              </div>
-              <div className="chat-actions">
-                <button className="icon-btn">🔍</button>
-                <button className="icon-btn">📞</button>
-                <button className="icon-btn">📹</button>
-                <button className="icon-btn">⋮</button>
               </div>
             </div>
 

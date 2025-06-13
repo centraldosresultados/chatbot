@@ -105,7 +105,8 @@ const montaContato = async (clientBot) => {
             contato = await montaContato(conexaoBot.clientBot); // Atualiza as informações de contato.
             // Notifica o administrador sobre nova conexão ou reconexão
             await notificaConexao(tipoInicializacao === 'sistema');
-            if (tipoInicializacao == "padrao" && socket) socket.emit("mudancaStatus", contato); // Emite o status de conexão para o cliente.
+            // Sempre emite o status de conexão para o cliente, independente do tipo de inicialização
+            if (socket) socket.emit("mudancaStatus", contato);
         });
 
         /**Ao receber mensagens */
