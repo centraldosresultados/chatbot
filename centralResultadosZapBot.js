@@ -113,6 +113,19 @@ const montaContato = async (clientBot) => {
         conexaoBot.clientBot.on("message", async (message) => {
             console.log("Recebendo Mensagem");
 
+            // Emitir mensagem recebida para o frontend em tempo real
+            if (socket && !message.fromMe) {
+                const messageData = {
+                    id: message.id.id,
+                    from: message.from,
+                    body: message.body,
+                    timestamp: message.timestamp,
+                    type: message.type,
+                    hasMedia: message.hasMedia
+                };
+                socket.emit('novaMensagemRecebida', messageData);
+            }
+
             /**Teste de Conexao para usuarios */
             // Responde a mensagens de "Teste Conexão".
             if (message._data.body == "Teste Conexão") {
@@ -143,6 +156,20 @@ const montaContato = async (clientBot) => {
 
                 /**Altera o Status da Mensagem */
                 statusMensagens.setMensagem(id, altera); // Atualiza o status da mensagem no sistema.
+
+                // Emitir atualização de status para o frontend
+                if (socket) {
+                    let status = 'sent';
+                    if (altera.lida) {
+                        status = 'read';
+                    } else if (altera.enviado) {
+                        status = 'delivered';
+                    }
+                    socket.emit('statusMensagemAtualizado', {
+                        messageId: id,
+                        status: status
+                    });
+                }
 
                 // Atualizar status no MongoDB
                 let novoStatus = 'Enviada';
@@ -189,6 +216,108 @@ const montaContato = async (clientBot) => {
     // Evento disparado quando um novo cliente se conecta ao servidor Socket.io.
     conexaoIo.io.on("connection", (socketIn) => {
         socket = socketIn; // Armazena a instância do socket do cliente conectado.
+
+        // Evento para enviar mensagem individual via chat
+        socket.on("enviarMensagem", async (args, callback) => {
+            console.log("Enviando mensagem via chat:", args);
+            
+            if (!args || !args.numero || !args.mensagem) {
+                console.error("Erro: Dados incompletos para enviarMensagem.");
+                if (callback) callback({ erro: "Número e mensagem são obrigatórios." });
+                return;
+            }
+
+            const retornoMensagem = await conexaoBot.enviarMensagem(
+                args.numero,
+                args.mensagem,
+                args.imagem || undefined, // Imagem opcional
+                3 // Número de tentativas de envio
+            );
+
+            if (callback) callback(retornoMensagem); // Retorna o resultado da operação.
+        });
+
+        // Evento para obter todas as conversas do WhatsApp
+        socket.on("obterConversasWhatsApp", async (args, callback) => {
+            console.log("Obtendo conversas do WhatsApp...");
+            
+            try {
+                if (!conexaoBot.clientBot || !conexaoBot.clientBot.info) {
+                    if (callback) callback({ erro: "WhatsApp não conectado" });
+                    return;
+                }
+
+                // Obter todos os chats
+                const chats = await conexaoBot.clientBot.getChats();
+                const conversas = [];
+
+                for (const chat of chats.slice(0, 50)) { // Limitamos a 50 conversas para performance
+                    try {
+                        const contact = await chat.getContact();
+                        const mensagens = await chat.fetchMessages({ limit: 10 }); // Últimas 10 mensagens
+                        
+                        const ultimaMensagem = mensagens.length > 0 ? mensagens[0] : null;
+                        
+                        conversas.push({
+                            id: chat.id._serialized,
+                            name: contact.pushname || contact.name || contact.number,
+                            number: contact.number,
+                            isGroup: chat.isGroup,
+                            unreadCount: chat.unreadCount,
+                            lastMessage: {
+                                body: ultimaMensagem ? ultimaMensagem.body : '',
+                                timestamp: ultimaMensagem ? ultimaMensagem.timestamp : 0,
+                                fromMe: ultimaMensagem ? ultimaMensagem.fromMe : false
+                            },
+                            mensagens: mensagens.map(msg => ({
+                                id: msg.id.id,
+                                body: msg.body,
+                                fromMe: msg.fromMe,
+                                timestamp: msg.timestamp,
+                                type: msg.type,
+                                hasMedia: msg.hasMedia
+                            }))
+                        });
+                    } catch (error) {
+                        console.error("Erro ao processar chat:", error);
+                    }
+                }
+
+                if (callback) callback({ sucesso: true, conversas });
+            } catch (error) {
+                console.error("Erro ao obter conversas:", error);
+                if (callback) callback({ erro: "Erro ao obter conversas do WhatsApp" });
+            }
+        });
+
+        // Evento para obter mensagens de uma conversa específica
+        socket.on("obterMensagensConversa", async (args, callback) => {
+            console.log("Obtendo mensagens da conversa:", args.chatId);
+            
+            try {
+                if (!conexaoBot.clientBot || !conexaoBot.clientBot.info) {
+                    if (callback) callback({ erro: "WhatsApp não conectado" });
+                    return;
+                }
+
+                const chat = await conexaoBot.clientBot.getChatById(args.chatId);
+                const mensagens = await chat.fetchMessages({ limit: args.limit || 50 });
+                
+                const mensagensFormatadas = mensagens.map(msg => ({
+                    id: msg.id.id,
+                    body: msg.body,
+                    fromMe: msg.fromMe,
+                    timestamp: msg.timestamp,
+                    type: msg.type,
+                    hasMedia: msg.hasMedia
+                }));
+
+                if (callback) callback({ sucesso: true, mensagens: mensagensFormatadas });
+            } catch (error) {
+                console.error("Erro ao obter mensagens da conversa:", error);
+                if (callback) callback({ erro: "Erro ao obter mensagens da conversa" });
+            }
+        });
 
         // Evento para enviar senha provisória ao criador.
         socket.on("enviarSenhaProvisoriaCriador", async (args, callback) => {

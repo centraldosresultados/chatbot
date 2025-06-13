@@ -405,7 +405,7 @@ button:disabled {
   margin-top: 20px;
   padding: 15px;
   background-color: #f0f0f0;
-  border: 1px solid #eee;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
   white-space: pre-wrap;
   text-align: left;
@@ -834,4 +834,15 @@ img {
   .detail-row strong {
     min-width: auto;
   }
+}
+
+/* Estilos específicos para o Chat WhatsApp quando usado no main-content */
+.main-content .whatsapp-chat {
+  height: calc(100vh - 140px); /* Altura ajustada para caber no layout */
+  margin: -20px; /* Remove o padding do main-content para ocupar toda a área */
+}
+
+/* Ajustes para integração com o layout existente */
+.main-content:has(.whatsapp-chat) {
+  padding: 0; /* Remove padding quando chat está ativo */
 }

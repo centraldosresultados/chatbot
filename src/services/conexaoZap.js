@@ -46,11 +46,23 @@ const { pegaIdContatoConfirmacao } = require("../config");
      */
     validarNumero(numero) {
       // Remove caracteres não numéricos
-      const numeroLimpo = numero.replace(/\D/g, '');
+      let numeroLimpo = numero.replace(/\D/g, '');
+      
+      // Remove código do país (55) se presente no início (pode aparecer como 055xx...)
+      if (numeroLimpo.startsWith('055') && numeroLimpo.length >= 13) {
+        numeroLimpo = numeroLimpo.substring(3); // Remove '055'
+      } else if (numeroLimpo.startsWith('55') && numeroLimpo.length >= 12) {
+        numeroLimpo = numeroLimpo.substring(2); // Remove '55'
+      }
+      
+      // Remove prefixo '0' se presente no início (alguns sistemas antigos)
+      if (numeroLimpo.startsWith('0') && numeroLimpo.length > 11) {
+        numeroLimpo = numeroLimpo.substring(1);
+      }
       
       // Verifica se tem pelo menos 10 dígitos (DDD + 8 dígitos) ou 11 dígitos (DDD + 9 dígitos)
       if (numeroLimpo.length < 10 || numeroLimpo.length > 11) {
-        return { erro: 'Número inválido. Deve ter entre 10 e 11 dígitos.' };
+        return { erro: `Número inválido. Tem ${numeroLimpo.length} dígitos, deve ter entre 10 e 11 dígitos. Número processado: ${numeroLimpo}` };
       }
       
       const DDD = numeroLimpo.substr(0, 2);
@@ -121,7 +133,6 @@ const { pegaIdContatoConfirmacao } = require("../config");
       }
       
       const numeroFormatado = resultadoValidacao.numero;
-      const numeroCompleto = "55" + numeroFormatado + "@c.us";
       
       // Verificação de conectividade
       const conectado = await this.verificarConectividade();
@@ -151,63 +162,68 @@ const { pegaIdContatoConfirmacao } = require("../config");
         }
       }
       
-      // Tentativas de envio com retry
-      for (let tentativa = 1; tentativa <= tentativas; tentativa++) {
-        try {
-          console.log(`[conexaoZap.js] enviarMensagem: Tentativa ${tentativa}/${tentativas} para ${numeroFormatado}`);
+      // Gera variações do número para fallback
+      const variacoesNumero = this.gerarVariacoesNumero(numeroFormatado);
+      console.log(`[conexaoZap.js] enviarMensagem: Variações do número geradas:`, variacoesNumero);
+      
+      // Tenta enviar para cada variação do número
+      for (let i = 0; i < variacoesNumero.length; i++) {
+        const numeroVariacao = variacoesNumero[i];
+        const numeroCompleto = "55" + numeroVariacao + "@c.us";
+        
+        console.log(`[conexaoZap.js] enviarMensagem: Tentando formato ${i + 1}/${variacoesNumero.length}: ${numeroVariacao}`);
+        
+        // Tentativas de envio com retry para esta variação
+        for (let tentativa = 1; tentativa <= tentativas; tentativa++) {
+          console.log(`[conexaoZap.js] enviarMensagem: Tentativa ${tentativa}/${tentativas} para formato ${numeroVariacao}`);
           
-          let resultado;
+          const resultado = await this.tentarEnvioNumero(numeroCompleto, texto, imagem, imagemEnviar, temTexto, temImagem);
           
-          if (temImagem && temTexto) {
-            // Envia imagem com legenda
-            resultado = await this.clientBot.sendMessage(numeroCompleto, imagemEnviar, { caption: texto });
-          } else if (temTexto && !temImagem) {
-            // Envia apenas texto
-            resultado = await this.clientBot.sendMessage(numeroCompleto, texto);
-          } else if (temImagem && !temTexto) {
-            // Envia apenas imagem
-            resultado = await this.clientBot.sendMessage(numeroCompleto, imagemEnviar);
-          }
-          
-          if (resultado && resultado._data && resultado._data.id) {
-            const messageId = resultado._data.id.id;
-            console.log(`[conexaoZap.js] enviarMensagem: Mensagem enviada com sucesso. ID: ${messageId}`);
+          if (resultado.sucesso) {
+            console.log(`[conexaoZap.js] enviarMensagem: Mensagem enviada com sucesso para formato ${numeroVariacao}. ID: ${resultado.id}`);
             
-            // Retorna sucesso imediato sem aguardar confirmação de status
             return { 
               sucesso: "Mensagem enviada com sucesso", 
-              id: messageId, 
+              id: resultado.id, 
               numero: numeroCompleto,
-              tentativa: tentativa
+              formatoUsado: numeroVariacao,
+              tentativa: tentativa,
+              variacaoUtilizada: i + 1
             };
           } else {
-            throw new Error('Resposta inválida do WhatsApp Web');
-          }
-          
-        } catch (error) {
-          console.error(`[conexaoZap.js] enviarMensagem: Erro na tentativa ${tentativa}:`, error);
-          
-          // Se não é a última tentativa, aguarda antes de tentar novamente
-          if (tentativa < tentativas) {
-            const delay = tentativa * 2000; // Delay progressivo: 2s, 4s, 6s...
-            console.log(`[conexaoZap.js] enviarMensagem: Aguardando ${delay}ms antes da próxima tentativa...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+            console.error(`[conexaoZap.js] enviarMensagem: Erro na tentativa ${tentativa} para formato ${numeroVariacao}:`, resultado.erro);
             
-            // Re-verifica conectividade antes da próxima tentativa
-            const conectadoRetry = await this.verificarConectividade();
-            if (!conectadoRetry) {
-              console.error('[conexaoZap.js] enviarMensagem: Perdeu conectividade durante retry');
-              return { erro: 'Conexão perdida durante tentativas de envio', detalhes: error.message };
+            // Se não é a última tentativa para esta variação, aguarda antes de tentar novamente
+            if (tentativa < tentativas) {
+              const delay = tentativa * 1000; // Delay progressivo: 1s, 2s, 3s...
+              console.log(`[conexaoZap.js] enviarMensagem: Aguardando ${delay}ms antes da próxima tentativa...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              
+              // Re-verifica conectividade antes da próxima tentativa
+              const conectadoRetry = await this.verificarConectividade();
+              if (!conectadoRetry) {
+                console.error('[conexaoZap.js] enviarMensagem: Perdeu conectividade durante retry');
+                return { erro: 'Conexão perdida durante tentativas de envio', detalhes: resultado.erro };
+              }
             }
-          } else {
-            // Última tentativa falhou
-            console.error(`[conexaoZap.js] enviarMensagem: Todas as ${tentativas} tentativas falharam`);
-            return { erro: 'Falha ao enviar mensagem após todas as tentativas', detalhes: error.message };
           }
+        }
+        
+        console.warn(`[conexaoZap.js] enviarMensagem: Todas as tentativas falharam para formato ${numeroVariacao}`);
+        
+        // Pausa entre variações de formato
+        if (i < variacoesNumero.length - 1) {
+          console.log(`[conexaoZap.js] enviarMensagem: Aguardando 2s antes de tentar próximo formato...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
       
-      return { erro: 'Erro inesperado no envio da mensagem' };
+      console.error(`[conexaoZap.js] enviarMensagem: Falha ao enviar mensagem para todas as variações do número ${destinatario}`);
+      return { 
+        erro: 'Falha ao enviar mensagem para todas as variações do número', 
+        detalhes: `Tentativas: ${variacoesNumero.join(', ')}`,
+        variacoesTentadas: variacoesNumero
+      };
     },
     /**
      * @async
@@ -313,6 +329,86 @@ const { pegaIdContatoConfirmacao } = require("../config");
         }
       } 
     },
+    /**
+     * @async
+     * @memberof conexaoBot
+     * @function gerarVariacoesNumero
+     * @description Gera variações de formato de um número para fallback de envio.
+     * @param {string} numeroOriginal - Número original formatado (DDDXXXXXXXXX).
+     * @returns {Array<string>} Array com variações do número para tentar.
+     */
+    gerarVariacoesNumero(numeroOriginal) {
+      const numeroLimpo = numeroOriginal.replace(/\D/g, '');
+      const variacoes = [];
+      
+      // Número original já validado
+      variacoes.push(numeroLimpo);
+      
+      if (numeroLimpo.length === 11) {
+        const DDD = numeroLimpo.substr(0, 2);
+        const numeroSemDDD = numeroLimpo.substr(2);
+        
+        // Se tem 9 dígitos após DDD, remove o primeiro dígito (geralmente o 9)
+        if (numeroSemDDD.length === 9) {
+          const numeroSem9 = DDD + numeroSemDDD.substr(1);
+          variacoes.push(numeroSem9);
+          
+          // Se ainda tem 8 dígitos, remove mais um dígito
+          if (numeroSemDDD.substr(1).length === 8) {
+            const numeroSemMais1 = DDD + numeroSemDDD.substr(2);
+            variacoes.push(numeroSemMais1);
+          }
+        }
+      }
+      
+      // Remove duplicatas e retorna
+      return [...new Set(variacoes)];
+    },
+
+    /**
+     * @async
+     * @memberof conexaoBot
+     * @function tentarEnvioNumero
+     * @description Tenta enviar mensagem para um número específico formatado.
+     * @param {string} numeroCompleto - Número completo com DDI e sufixo (@c.us).
+     * @param {string} texto - Texto da mensagem.
+     * @param {string} imagem - URL da imagem.
+     * @param {object} imagemEnviar - Objeto MessageMedia da imagem.
+     * @param {boolean} temTexto - Se tem texto para enviar.
+     * @param {boolean} temImagem - Se tem imagem para enviar.
+     * @returns {Promise<object>} Resultado do envio.
+     */
+    async tentarEnvioNumero(numeroCompleto, texto, imagem, imagemEnviar, temTexto, temImagem) {
+      try {
+        let resultado;
+        
+        if (temImagem && temTexto) {
+          // Envia imagem com legenda
+          resultado = await this.clientBot.sendMessage(numeroCompleto, imagemEnviar, { caption: texto });
+        } else if (temTexto && !temImagem) {
+          // Envia apenas texto
+          resultado = await this.clientBot.sendMessage(numeroCompleto, texto);
+        } else if (temImagem && !temTexto) {
+          // Envia apenas imagem
+          resultado = await this.clientBot.sendMessage(numeroCompleto, imagemEnviar);
+        }
+        
+        if (resultado && resultado._data && resultado._data.id) {
+          const messageId = resultado._data.id.id;
+          return { 
+            sucesso: true, 
+            id: messageId, 
+            numero: numeroCompleto 
+          };
+        } else {
+          return { sucesso: false, erro: 'Resposta inválida do WhatsApp Web' };
+        }
+        
+      } catch (error) {
+        return { sucesso: false, erro: error.message };
+      }
+    },
+
   };
 
   /**

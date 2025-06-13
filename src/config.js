@@ -49,7 +49,7 @@
 
 //Exemplo de configuração alternativa para ambiente web (comentado)
 const configuracoes = {
-    funcionamento: 'web',
+    funcionamento: 'local', // Mudado para local para desenvolvimento
     porta: 3100,
     dataBase: {
         host: 'centraldosresultados.com',

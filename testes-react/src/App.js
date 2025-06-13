@@ -7,11 +7,12 @@ import EnviarMensagemParaTodos from './components/EnviarMensagemParaTodos';
 import ListaValidacoesCadastro from './components/ListaValidacoesCadastro';
 import ListaEnviosSenhas from './components/ListaEnviosSenhas';
 import ListaMensagensEnviadas from './components/ListaMensagensEnviadas';
+import ChatWhatsApp from './components/ChatWhatsApp';
 
 // Connect to the Socket.io server.
 // Replace with your server's URL if it's different.
-//const SOCKET_SERVER_URL = 'http://localhost:3100';
-const SOCKET_SERVER_URL = 'https://chatbot.centraldosresultados.com:3100';
+const SOCKET_SERVER_URL = 'http://localhost:3100';
+//const SOCKET_SERVER_URL = 'https://chatbot.centraldosresultados.com:3100';
 
 function App() {
   const [socket, setSocket] = useState(null);
@@ -148,6 +149,14 @@ function App() {
           <ul className="sidebar-menu">
             <li>
               <button 
+                className={activeTab === 'chat' ? 'active' : ''} 
+                onClick={() => setActiveTab('chat')}
+              >
+                💬 Chat WhatsApp
+              </button>
+            </li>
+            <li>
+              <button 
                 className={activeTab === 'enviarMensagem' ? 'active' : ''} 
                 onClick={() => setActiveTab('enviarMensagem')}
               >
@@ -230,6 +239,9 @@ function App() {
 
         {/* Conteúdo Principal */}
         <main className="main-content">
+          {activeTab === 'chat' && (
+            <ChatWhatsApp socket={socket} setResponseArea={setResponseArea} />
+          )}
           {activeTab === 'enviarMensagem' && (
             <EnviarMensagemParaTodos socket={socket} setResponseArea={setResponseArea} />
           )}
