@@ -216,6 +216,7 @@ const montaContato = async (clientBot) => {
     /**Quando o Servidor socket.io é levantado */
     // Evento disparado quando um novo cliente se conecta ao servidor Socket.io.
     conexaoIo.io.on("connection", (socketIn) => {
+        console.log('[Backend] Nova conexão Socket.io estabelecida!'); // Debug
         socket = socketIn; // Armazena a instância do socket do cliente conectado.
 
         // Evento para enviar mensagem individual via chat
@@ -394,13 +395,31 @@ const montaContato = async (clientBot) => {
 
             // Salvar no MongoDB independente de erro ou sucesso
             try {
-                await mongoService.salvarValidacaoCadastro({
+                const dadosSalvar = {
                     telefone: args.telefone,
                     nome: args.nome,
                     status_mensagem: envio.erro ? 'Erro' : 'Enviada',
                     id_mensagem: envio.id || null
-                });
-                console.log("Validação de cadastro salva no MongoDB");
+                };
+                
+                const resultadoSalvar = await mongoService.salvarValidacaoCadastro(dadosSalvar);
+                console.log("Validação de cadastro salva no MongoDB:", resultadoSalvar.id);
+                
+                // Se a mensagem foi enviada com sucesso, iniciar monitoramento adicional
+                if (envio.id && !envio.erro) {
+                    try {
+                        console.log(`[Bot] Iniciando monitoramento adicional para validação ${envio.id}`);
+                        await conexaoBot.monitorarStatusMensagem(
+                            envio.id, 
+                            args.telefone, 
+                            dadosEnviar.texto || '[Mensagem de validação]', 
+                            5 // 5 minutos timeout
+                        );
+                    } catch (monitorError) {
+                        console.warn('[Bot] Erro ao iniciar monitoramento adicional da validação:', monitorError);
+                    }
+                }
+                
             } catch (mongoError) {
                 console.error("Erro ao salvar validação no MongoDB:", mongoError);
             }
@@ -581,8 +600,10 @@ const montaContato = async (clientBot) => {
 
         // Eventos para listagem de dados do MongoDB
         socket.on("listarValidacoesCadastro", async (args, callback) => {
+            console.log('[Backend] Recebida requisição listarValidacoesCadastro'); // Debug
             try {
                 const validacoes = await mongoService.listarValidacoesCadastro();
+                console.log(`[Backend] Retornando ${validacoes.length} validações`); // Debug
                 if (callback) callback({ sucesso: true, dados: validacoes });
             } catch (error) {
                 console.error("Erro ao listar validações:", error);
@@ -621,6 +642,32 @@ const montaContato = async (clientBot) => {
             }
         });
 
+        socket.on("verificarNumeroWhatsApp", async (args, callback) => {
+            try {
+                const { numero } = args;
+                
+                if (!numero) {
+                    if (callback) callback({ 
+                        sucesso: false, 
+                        erro: "Número é obrigatório" 
+                    });
+                    return;
+                }
+
+                console.log(`[Socket] Verificando número WhatsApp: ${numero}`);
+                const resultado = await conexaoBot.verificarNumeroWhatsApp(numero);
+                
+                if (callback) callback(resultado);
+            } catch (error) {
+                console.error("Erro ao verificar número WhatsApp:", error);
+                if (callback) callback({ 
+                    sucesso: false, 
+                    erro: "Erro ao verificar número", 
+                    detalhes: error.message 
+                });
+            }
+        });
+
         /**
          * Função para monitorar e tentar reconectar ao WhatsApp em caso de desconexão.
          * @param {string} nomeSessao
@@ -647,6 +694,230 @@ const montaContato = async (clientBot) => {
 
         // Inicia o monitoramento de desconexão
         monitorarDesconexao();
+
+        socket.on("verificarNumeroWhatsApp", async (args, callback) => {
+            try {
+                const { numero } = args;
+                
+                if (!numero) {
+                    if (callback) callback({ 
+                        sucesso: false, 
+                        erro: "Número é obrigatório" 
+                    });
+                    return;
+                }
+
+                console.log(`[Socket] Verificando número WhatsApp: ${numero}`);
+                const resultado = await conexaoBot.verificarNumeroWhatsApp(numero);
+                
+                if (callback) callback(resultado);
+            } catch (error) {
+                console.error("Erro ao verificar número WhatsApp:", error);
+                if (callback) callback({ 
+                    sucesso: false, 
+                    erro: "Erro ao verificar número", 
+                    detalhes: error.message 
+                });
+            }
+        });
+
+        // Reenviar mensagem com formato alternativo
+        socket.on("reenviarComFormatoAlternativo", async (args, callback) => {
+            console.log('[Backend] Recebida requisição reenviarComFormatoAlternativo:', args);
+            
+            if (!args || !args.numeroOriginal || !args.texto) {
+                const erro = "Número original e texto são obrigatórios";
+                console.error('[Backend] Erro:', erro);
+                if (callback) callback({ erro });
+                return;
+            }
+            
+            try {
+                const resultado = await conexaoBot.reenviarComFormatoAlternativo(
+                    args.numeroOriginal,
+                    args.texto,
+                    args.imagem
+                );
+                
+                console.log('[Backend] Resultado do reenvio:', resultado);
+                if (callback) callback(resultado);
+            } catch (error) {
+                console.error('[Backend] Erro ao reenviar com formato alternativo:', error);
+                if (callback) callback({ erro: "Erro interno do servidor", detalhes: error.message });
+            }
+        });
+
+        // Reenviar validação existente com formato alternativo
+        socket.on("reenviarValidacaoExistente", async (args, callback) => {
+            console.log('[Backend] Recebida requisição reenviarValidacaoExistente:', args);
+            
+            if (!args || !args.id || !args.telefone) {
+                const erro = "ID da validação e telefone são obrigatórios";
+                console.error('[Backend] Erro:', erro);
+                if (callback) callback({ erro });
+                return;
+            }
+            
+            try {
+                // Buscar a validação no banco
+                const validacoes = await mongoService.listarValidacoesCadastro();
+                const validacao = validacoes.find(v => v._id.toString() === args.id);
+                
+                if (!validacao) {
+                    const erro = "Validação não encontrada";
+                    console.error('[Backend] Erro:', erro);
+                    if (callback) callback({ erro });
+                    return;
+                }
+                
+                console.log(`[Backend] Encontrada validação para ${validacao.nome} (${validacao.telefone})`);
+                
+                // Tentar reenvio com formato alternativo
+                const resultado = await conexaoBot.reenviarComFormatoAlternativo(
+                    validacao.telefone,
+                    `Validação de cadastro - Central dos Resultados\n\nOlá ${validacao.nome}!\n\nEste é um reenvio da validação de cadastro devido a problemas de entrega no número original.`,
+                    null
+                );
+                
+                if (resultado.sucesso) {
+                    // Atualizar status no MongoDB
+                    try {
+                        await mongoService.salvarValidacaoCadastro({
+                            telefone: resultado.numeroAlternativo,
+                            nome: validacao.nome + ' (Reenvio)',
+                            status_mensagem: 'Enviada',
+                            id_mensagem: resultado.id
+                        });
+                    } catch (mongoError) {
+                        console.warn('[Backend] Erro ao salvar reenvio no MongoDB:', mongoError);
+                    }
+                }
+                
+                console.log('[Backend] Resultado do reenvio de validação:', resultado);
+                if (callback) callback(resultado);
+            } catch (error) {
+                console.error('[Backend] Erro ao reenviar validação existente:', error);
+                if (callback) callback({ erro: "Erro interno do servidor", detalhes: error.message });
+            }
+        });
+
+        // Evento para executar migração de dados
+        socket.on("executarMigracao", async (args, callback) => {
+            try {
+                console.log("Executando migração de validações...");
+                
+                const { migrarValidacoes } = require('./migrar-validacoes');
+                const resultado = await migrarValidacoes();
+                
+                if (callback) callback({ 
+                    sucesso: true, 
+                    resultado: "Migração executada com sucesso" 
+                });
+            } catch (error) {
+                console.error("Erro na migração:", error);
+                if (callback) callback({ 
+                    sucesso: false, 
+                    erro: error.message 
+                });
+            }
+        });
+
+        // Evento para verificar mensagens não monitoradas
+        socket.on("verificarNaoMonitoradas", async (args, callback) => {
+            try {
+                console.log("Verificando mensagens não monitoradas...");
+                
+                const { verificarMensagensNaoMonitoradas } = require('./verificar-nao-monitoradas');
+                const resultado = await verificarMensagensNaoMonitoradas();
+                
+                if (callback) callback({ 
+                    sucesso: true, 
+                    resultado: "Verificação concluída com sucesso" 
+                });
+            } catch (error) {
+                console.error("Erro na verificação:", error);
+                if (callback) callback({ 
+                    sucesso: false, 
+                    erro: error.message 
+                });
+            }
+        });
+
+        // Evento para forçar monitoramento de mensagens pendentes
+        socket.on("forcarMonitoramento", async (args, callback) => {
+            try {
+                console.log("Forçando monitoramento de mensagens pendentes...");
+                
+                // Buscar mensagens que precisam de monitoramento
+                const mensagensPendentes = await mongoService.buscarValidacoesPendentes();
+                let contadorMonitoradas = 0;
+                
+                for (const mensagem of mensagensPendentes) {
+                    if (mensagem.id_mensagem) {
+                        try {
+                            await conexaoBot.monitorarStatusMensagem(
+                                mensagem.id_mensagem, 
+                                mensagem.telefone, 
+                                'Mensagem de validação', 
+                                2 // 2 minutos timeout para verificação rápida
+                            );
+                            contadorMonitoradas++;
+                        } catch (monitorError) {
+                            console.warn(`Erro ao monitorar mensagem ${mensagem.id_mensagem}:`, monitorError);
+                        }
+                    }
+                }
+                
+                if (callback) callback({ 
+                    sucesso: true, 
+                    resultado: `Monitoramento iniciado para ${contadorMonitoradas} mensagens` 
+                });
+            } catch (error) {
+                console.error("Erro ao forçar monitoramento:", error);
+                if (callback) callback({ 
+                    sucesso: false, 
+                    erro: error.message 
+                });
+            }
+        });
+
+        // Evento para reprocessar mensagens antigas
+        socket.on("reprocessarMensagensAntigas", async (args, callback) => {
+            try {
+                console.log("Reprocessando mensagens antigas...");
+                
+                // Buscar mensagens marcadas para reenvio
+                const mensagensParaReenvio = await mongoService.buscarMensagensParaReenvio();
+                let contadorReenviadas = 0;
+                
+                for (const mensagem of mensagensParaReenvio) {
+                    try {
+                        const resultado = await conexaoBot.reenviarComFormatoAlternativo(
+                            mensagem.telefone, 
+                            'Mensagem reenviada automaticamente',
+                            mensagem._id
+                        );
+                        
+                        if (resultado.sucesso) {
+                            contadorReenviadas++;
+                        }
+                    } catch (reenvioError) {
+                        console.warn(`Erro ao reenviar mensagem ${mensagem._id}:`, reenvioError);
+                    }
+                }
+                
+                if (callback) callback({ 
+                    sucesso: true, 
+                    resultado: `${contadorReenviadas} mensagens reenviadas com sucesso` 
+                });
+            } catch (error) {
+                console.error("Erro no reprocessamento:", error);
+                if (callback) callback({ 
+                    sucesso: false, 
+                    erro: error.message 
+                });
+            }
+        });
     });
 })();
 

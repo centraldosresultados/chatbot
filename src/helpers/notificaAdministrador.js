@@ -3,7 +3,6 @@
  * Envia uma mensagem para o telefone definido em contatoAdministrador no config.js.
  */
 const { contatoAdministrador } = require('../config');
-const { conexaoBot } = require('../services/conexaoZap');
 
 // Garantir que contatoAdministrador está definido corretamente
 function getTelefoneAdministrador() {
@@ -11,6 +10,17 @@ function getTelefoneAdministrador() {
   if (contatoAdministrador && contatoAdministrador.telefone) return contatoAdministrador.telefone;
   if (contatoAdministrador && contatoAdministrador.default && contatoAdministrador.default.telefone) return contatoAdministrador.default.telefone;
   return null;
+}
+
+// Função para obter conexaoBot de forma dinâmica, evitando dependência circular
+function getConexaoBot() {
+  try {
+    const { conexaoBot } = require('../services/conexaoZap');
+    return conexaoBot;
+  } catch (error) {
+    console.warn('[notificaAdministrador] Não foi possível importar conexaoBot:', error.message);
+    return null;
+  }
 }
 
 /**
@@ -22,13 +32,34 @@ function getTelefoneAdministrador() {
 async function notificaAdministrador(motivo, detalhes = '') {
   try {
     const telefone = getTelefoneAdministrador();
-    if (!telefone) throw new Error('Telefone do administrador não encontrado em config.js');
+    if (!telefone) {
+      console.warn('[notificaAdministrador] Telefone do administrador não encontrado em config.js');
+      return;
+    }
+
+    const conexaoBot = getConexaoBot();
+    if (!conexaoBot || !conexaoBot.enviarMensagem) {
+      console.warn('[notificaAdministrador] conexaoBot não disponível ou não inicializado');
+      return;
+    }
+
+    // Verificar se o cliente está conectado
+    const conectado = await conexaoBot.verificarConectividade();
+    if (!conectado) {
+      console.warn('[notificaAdministrador] WhatsApp não está conectado, notificação não enviada');
+      return;
+    }
+
     const texto = `⚠️ Atenção: ${motivo}${detalhes ? `\nDetalhes: ${detalhes}` : ''}`;
-    await conexaoBot.enviarMensagem(telefone, texto);
-    // Opcional: logar o envio
-    console.log(`[notificaAdministrador] Mensagem enviada para o administrador (${telefone}): ${texto}`);
+    const resultado = await conexaoBot.enviarMensagem(telefone, texto);
+    
+    if (resultado.sucesso) {
+      console.log(`[notificaAdministrador] ✅ Mensagem enviada para o administrador (${telefone}): ${motivo}`);
+    } else {
+      console.error(`[notificaAdministrador] ❌ Falha ao enviar para administrador: ${resultado.erro}`);
+    }
   } catch (err) {
-    console.error('[notificaAdministrador] Falha ao notificar o administrador:', err);
+    console.error('[notificaAdministrador] Erro inesperado ao notificar o administrador:', err.message);
   }
 }
 

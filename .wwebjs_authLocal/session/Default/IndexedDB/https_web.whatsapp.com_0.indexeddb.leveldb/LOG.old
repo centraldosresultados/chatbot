@@ -1,0 +1,15 @@
+2025/06/16-10:21:44.186 15803 Reusing MANIFEST /Users/silverio/Dev/Web/centralresultados/chatbot/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/06/16-10:21:44.186 15803 Recovering log #170
+2025/06/16-10:21:44.215 15803 Reusing old log /Users/silverio/Dev/Web/centralresultados/chatbot/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000170.log 
+2025/06/16-10:21:45.875 f803 Level-0 table #176: started
+2025/06/16-10:21:45.885 f803 Level-0 table #176: 483395 bytes OK
+2025/06/16-10:21:45.896 f803 Delete type=0 #170
+2025/06/16-10:21:45.898 f803 Manual compaction at level-0 from '\x000\x00\x00\x00' @ 72057594037927935 : 1 .. '\x001\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/06/16-10:21:47.202 1ef0f Compacting 1@1 + 2@2 files
+2025/06/16-10:21:47.251 1ef0f Generated table #177@1: 62779 keys, 2226258 bytes
+2025/06/16-10:21:47.280 1ef0f Generated table #178@1: 37435 keys, 1489325 bytes
+2025/06/16-10:21:47.280 1ef0f Compacted 1@1 + 2@2 files => 3715583 bytes
+2025/06/16-10:21:47.284 1ef0f compacted to: files[ 0 0 2 0 0 0 0 ]
+2025/06/16-10:21:47.284 1ef0f Delete type=2 #176
+2025/06/16-10:21:47.284 1ef0f Delete type=2 #173
+2025/06/16-10:21:47.284 1ef0f Delete type=2 #172

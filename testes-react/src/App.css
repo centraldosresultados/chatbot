@@ -689,6 +689,64 @@ img {
   word-wrap: break-word;
 }
 
+/* Linha expandida da tabela */
+.data-table .expanded-row td {
+  white-space: normal;
+  padding: 0;
+}
+
+.data-table .expanded-row {
+  background-color: #f8f9fa !important;
+}
+
+.data-table .expanded-row:hover {
+  background-color: #f8f9fa !important;
+}
+
+/* Grid de detalhes na linha expandida */
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+  font-size: 14px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.detail-label {
+  color: #495057;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.detail-value {
+  color: #6c757d;
+  word-break: break-word;
+}
+
+/* Animação suave para expansão */
+.expanded-row {
+  animation: expandRow 0.2s ease-in-out;
+}
+
+@keyframes expandRow {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Layout de Mensagens */
 .messages-layout {
   display: grid;

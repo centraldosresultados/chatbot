@@ -13,140 +13,66 @@ class MongoDBService {
         this.db = null;
         this.connected = false;
         this.uri = configuracoes.mongoDB.uri;
-        
-        // URIs alternativas para fallback
-        this.urisAlternativas = [
-            // URI básica sem parâmetros SSL/TLS
-            'mongodb+srv://silveriosepulveda:g7SbMKPby7roGi7P@cluster0.dcuqscr.mongodb.net/central-mensagens?retryWrites=true&w=majority',
-            // URI com TLS desabilitado explicitamente
-            'mongodb+srv://silveriosepulveda:g7SbMKPby7roGi7P@cluster0.dcuqscr.mongodb.net/central-mensagens?retryWrites=true&w=majority&tls=false',
-            // URI original do config
-            configuracoes.mongoDB.uri,
-            // URI com SSL legacy desabilitado
-            'mongodb+srv://silveriosepulveda:g7SbMKPby7roGi7P@cluster0.dcuqscr.mongodb.net/central-mensagens?retryWrites=true&w=majority&ssl=false'
-        ];
     }
 
-
     /**
-     * Conecta ao MongoDB
+     * Conecta ao MongoDB com TLS básico
      * @async
      * @returns {Promise<boolean>} True se conectado com sucesso
      */
     async conectar() {
-        // Configurações em ordem de preferência (da mais permissiva para funcionar)
-        const configuracoes = [
-            // Configuração 1: Sem TLS (mais compatível)
-            {
-                nome: 'Sem TLS',
-                options: {
-                    tls: false,
-                    ssl: false,
-                    serverSelectionTimeoutMS: 15000,
-                    socketTimeoutMS: 15000,
-                    connectTimeoutMS: 15000,
-                    maxPoolSize: 5,
-                    retryWrites: true
-                }
-            },
-            // Configuração 2: TLS básico
-            {
-                nome: 'TLS Básico',
-                options: {
-                    serverSelectionTimeoutMS: 15000,
-                    socketTimeoutMS: 15000,
-                    connectTimeoutMS: 15000,
-                    maxPoolSize: 5,
-                    retryWrites: true
-                }
-            },
-            // Configuração 3: TLS com certificados inválidos permitidos
-            {
-                nome: 'TLS Permissivo',
-                options: {
-                    tls: true,
-                    tlsAllowInvalidCertificates: true,
-                    tlsAllowInvalidHostnames: true,
-                    tlsInsecure: true,
-                    serverSelectionTimeoutMS: 15000,
-                    socketTimeoutMS: 15000,
-                    connectTimeoutMS: 15000,
-                    maxPoolSize: 5,
-                    retryWrites: true
-                }
-            }
-        ];
-
         try {
             if (this.connected) {
                 console.log('[MongoDB] Já conectado');
                 return true;
             }
 
-            for (const config of configuracoes) {
-                // Tentar cada URI com cada configuração
-                for (const uri of this.urisAlternativas) {
-                    try {
-                        console.log(`[MongoDB] Tentando ${config.nome} com URI: ${uri.substring(0, 50)}...`);
-                        
-                        // Limpar qualquer conexão anterior
-                        if (this.client) {
-                            try {
-                                await this.client.close();
-                            } catch {
-                                // Ignorar erro ao fechar
-                            }
-                            this.client = null;
-                        }
-                        
-                        this.client = new MongoClient(uri, config.options);
-                        
-                        // Timeout manual para evitar travamentos
-                        const connectPromise = this.client.connect();
-                        const timeoutPromise = new Promise((_, reject) => {
-                            setTimeout(() => reject(new Error('Connection timeout')), 10000);
-                        });
-                        
-                        await Promise.race([connectPromise, timeoutPromise]);
-                        
-                        // Testar a conexão
-                        this.db = this.client.db();
-                        await this.db.admin().ping();
-                        
-                        this.connected = true;
-                        
-                        console.log(`[MongoDB] ✅ CONECTADO com sucesso usando: ${config.nome}`);
-                        return true;
-                        
-                    } catch (error) {
-                        console.log(`[MongoDB] ❌ Falha ${config.nome}:`, error.message.substring(0, 100));
-                        
-                        // Limpar cliente após falha
-                        if (this.client) {
-                            try {
-                                await this.client.close();
-                            } catch {
-                                // Ignorar erros ao fechar
-                            }
-                            this.client = null;
-                        }
-                        this.connected = false;
-                        this.db = null;
-                        
-                        // Continuar para próxima URI
-                        continue;
-                    }
-                }
-            }
+            console.log('[MongoDB] Conectando com TLS básico...');
             
-            // Se chegou aqui, todas as tentativas falharam
-            console.error('[MongoDB] ❌ TODAS as configurações falharam');
-            throw new Error('Não foi possível conectar ao MongoDB com nenhuma configuração');
+            // Configuração otimizada com TLS básico
+            const options = {
+                serverSelectionTimeoutMS: 10000,
+                socketTimeoutMS: 10000,
+                connectTimeoutMS: 10000,
+                maxPoolSize: 5,
+                retryWrites: true,
+                maxIdleTimeMS: 30000,
+                // TLS básico (padrão do MongoDB Atlas)
+                tls: true
+            };
+
+            this.client = new MongoClient(this.uri, options);
+            
+            // Conectar com timeout manual
+            const connectPromise = this.client.connect();
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Connection timeout')), 8000);
+            });
+            
+            await Promise.race([connectPromise, timeoutPromise]);
+            
+            // Testar a conexão
+            this.db = this.client.db();
+            await this.db.admin().ping();
+            
+            this.connected = true;
+            
+            console.log('[MongoDB] ✅ CONECTADO com sucesso usando TLS básico');
+            return true;
             
         } catch (error) {
-            console.error('[MongoDB] Erro final ao conectar:', error.message);
+            console.error('[MongoDB] ❌ Erro ao conectar:', error.message);
+            
+            // Limpar cliente após falha
+            if (this.client) {
+                try {
+                    await this.client.close();
+                } catch {
+                    // Ignorar erros ao fechar
+                }
+                this.client = null;
+            }
             this.connected = false;
-            this.client = null;
             this.db = null;
             return false;
         }
@@ -196,18 +122,23 @@ class MongoDBService {
             await this._garantirConexao();
 
             const documento = {
-                data: new Date(),
+                dataEnvio: new Date(),
                 telefone: dados.telefone,
                 nome: dados.nome,
-                status_mensagem: dados.status_mensagem || 'Enviada',
+                status: dados.status_mensagem || 'Enviada',
                 id_mensagem: dados.id_mensagem,
+                tentativasReenvio: 0,
+                reenvioTentado: false,
+                formatoAlternativoUsado: false,
+                historicoReenvios: [],
                 created_at: new Date(),
                 updated_at: new Date()
             };
 
-            const resultado = await this.db.collection('tb_envio_validacoes').insertOne(documento);
+            // Usar a mesma coleção que o frontend
+            const resultado = await this.db.collection('validacoesCadastro').insertOne(documento);
 
-            console.log('[MongoDB] Validação cadastro salva:', resultado.insertedId);
+            console.log('[MongoDB] Validação cadastro salva em validacoesCadastro:', resultado.insertedId);
             return { sucesso: true, id: resultado.insertedId };
         } catch (error) {
             console.error('[MongoDB] Erro ao salvar validação cadastro:', error);
@@ -398,9 +329,10 @@ class MongoDBService {
 
             const documentos = await this.db.collection('tb_envio_validacoes')
                 .find({})
-                .sort({ data: -1 })
+                .sort({ created_at: -1, data: -1 }) // Ordenar por data de criação e depois por data
                 .toArray();
 
+            console.log(`[MongoDB] Validações encontradas: ${documentos.length}`);
             return documentos;
         } catch (error) {
             console.error('[MongoDB] Erro ao listar validações:', error);
@@ -481,6 +413,54 @@ class MongoDBService {
         } catch (error) {
             console.error('[MongoDB] Erro ao buscar mensagem por ID:', error);
             return null;
+        }
+    }
+
+    /**
+     * Busca validações que precisam de monitoramento
+     */
+    async buscarValidacoesPendentes() {
+        try {
+            await this._garantirConexao();
+
+            const cincoMinutosAtras = new Date(Date.now() - 5 * 60 * 1000);
+            
+            const validacoes = await this.db.collection('validacoesCadastro').find({
+                $and: [
+                    { status: { $in: ['Enviada', 'enviada'] } },
+                    { id_mensagem: { $exists: true, $ne: null } },
+                    { dataEnvio: { $lt: cincoMinutosAtras } },
+                    { reenvioTentado: { $ne: true } }
+                ]
+            }).toArray();
+
+            console.log(`[MongoDB] Encontradas ${validacoes.length} validações pendentes de monitoramento`);
+            return validacoes;
+        } catch (error) {
+            console.error('[MongoDB] Erro ao buscar validações pendentes:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Busca mensagens marcadas para reenvio
+     */
+    async buscarMensagensParaReenvio() {
+        try {
+            await this._garantirConexao();
+            
+            const mensagens = await this.db.collection('validacoesCadastro').find({
+                $or: [
+                    { precisaReenvio: true },
+                    { possivelmenteNaoEntregue: true }
+                ]
+            }).toArray();
+
+            console.log(`[MongoDB] Encontradas ${mensagens.length} mensagens marcadas para reenvio`);
+            return mensagens;
+        } catch (error) {
+            console.error('[MongoDB] Erro ao buscar mensagens para reenvio:', error);
+            return [];
         }
     }
 }

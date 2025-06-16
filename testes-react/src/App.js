@@ -8,11 +8,13 @@ import ListaValidacoesCadastro from './components/ListaValidacoesCadastro';
 import ListaEnviosSenhas from './components/ListaEnviosSenhas';
 import ListaMensagensEnviadas from './components/ListaMensagensEnviadas';
 import ChatWhatsApp from './components/ChatWhatsApp';
+import TesteReenvioAlternativo from './components/TesteReenvioAlternativo';
+import FerramentasMonitoramento from './components/FerramentasMonitoramento';
 
 // Connect to the Socket.io server.
 // Replace with your server's URL if it's different.
 //const SOCKET_SERVER_URL = 'http://localhost:3100';
-const SOCKET_SERVER_URL = 'https://chatbot.centraldosresultados.com:3100';
+const SOCKET_SERVER_URL = 'http://localhost:3100';
 
 function App() {
   const [socket, setSocket] = useState(null);
@@ -216,6 +218,22 @@ function App() {
                     💬 Lista Mensagens Enviadas
                   </button>
                 </li>
+                <li>
+                  <button 
+                    className={activeTab === 'reenvioAlternativo' ? 'active' : ''} 
+                    onClick={() => setActiveTab('reenvioAlternativo')}
+                  >
+                    🔄 Reenvio Alternativo
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    className={activeTab === 'ferramentasMonitoramento' ? 'active' : ''} 
+                    onClick={() => setActiveTab('ferramentasMonitoramento')}
+                  >
+                    🛠️ Ferramentas
+                  </button>
+                </li>
               </ul>
 
               {/* Controles WhatsApp no Menu Lateral */}
@@ -303,6 +321,13 @@ function App() {
               >
                 💬
               </button>
+              <button 
+                className={`icon-button ${activeTab === 'reenvioAlternativo' ? 'active' : ''}`}
+                onClick={() => setActiveTab('reenvioAlternativo')}
+                title="Reenvio Alternativo"
+              >
+                🔄
+              </button>
             </div>
           )}
         </nav>
@@ -329,6 +354,12 @@ function App() {
           )}
           {activeTab === 'listaMensagens' && (
             <ListaMensagensEnviadas socket={socket} setResponseArea={setResponseArea} />
+          )}
+          {activeTab === 'reenvioAlternativo' && (
+            <TesteReenvioAlternativo socket={socket} setResponseArea={setResponseArea} />
+          )}
+          {activeTab === 'ferramentasMonitoramento' && (
+            <FerramentasMonitoramento socket={socket} setResponseArea={setResponseArea} />
           )}
         </main>
         </div>

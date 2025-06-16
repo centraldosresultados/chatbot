@@ -19,39 +19,14 @@
  * @property {string} caminhoApi - URL base para a API da Central dos Criadores.
  * @property {string} logo - Caminho para o arquivo de logo.
  */
-// const configuracoes = {
-//     funcionamento: "local", // Define se está rodando localmente ou em produção/web
-//     porta: 3100, // Porta para o servidor HTTP/Socket.io
-//     dataBase: {
-//         // host: "localhost",
-//         // user: "root",
-//         // password: "senha", // ATENÇÃO: Considerar o uso de variáveis de ambiente para senhas
-//         // dataBase: "central_criadores",
-//         host: 'centraldosresultados.com',
-//         user: 'central_resultados',
-//         password: 'Central123Resultados',
-//         dataBase: 'central_resultados_criadores'
-//     },
-//     mongoDB: {
-//         uri: 'mongodb+srv://silveriosepulveda:g7SbMKPby7roGi7P@cluster0.dcuqscr.mongodb.net/central-mensagens?retryWrites=true&w=majority&appName=Cluster0&tls=true&tlsAllowInvalidCertificates=true',
-//         // Para ambiente de produção, usar:
-//         // uri: 'mongodb+srv://usuario:senha@cluster.mongodb.net/central-mensagens'
-//     },
-//     caminhoImagens: 'https://centraldosresultados.com',
-//     caminhoApi: 'https://centraldosresultados.com/api/centralCriadores',
-//     logo: '/img/logoMobile.png'
-
-//     // Exemplo de configuração para ambiente web (comentado)
-//     // caminhoImagens: 'https://itaperuna.net.br',
-//     // caminhoApi: 'https://itaperuna.net/api/centralCriadores',
-//     // logo: '/img/logoMobile.png'
-// };
-
-//Exemplo de configuração alternativa para ambiente web (comentado)
 const configuracoes = {
-    funcionamento: 'web',
-    porta: 3100,
+    funcionamento: "local", // Define se está rodando localmente ou em produção/web
+    porta: 3100, // Porta para o servidor HTTP/Socket.io
     dataBase: {
+        // host: "localhost",
+        // user: "root",
+        // password: "senha", // ATENÇÃO: Considerar o uso de variáveis de ambiente para senhas
+        // dataBase: "central_criadores",
         host: 'centraldosresultados.com',
         user: 'central_resultados',
         password: 'Central123Resultados',
@@ -64,8 +39,28 @@ const configuracoes = {
     },
     caminhoImagens: 'https://centraldosresultados.com',
     caminhoApi: 'https://centraldosresultados.com/api/centralCriadores',
-    logo: '/img/logoMobile.png'
-}
+    logo: '/img/logoMobile.png'   
+};
+
+//Exemplo de configuração alternativa para ambiente web (comentado)
+// const configuracoes = {
+//     funcionamento: 'web',
+//     porta: 3100,
+//     dataBase: {
+//         host: 'centraldosresultados.com',
+//         user: 'central_resultados',
+//         password: 'Central123Resultados',
+//         dataBase: 'central_resultados_criadores'
+//     },
+//     mongoDB: {
+//         uri: 'mongodb+srv://silveriosepulveda:g7SbMKPby7roGi7P@cluster0.dcuqscr.mongodb.net/central-mensagens?retryWrites=true&w=majority&appName=Cluster0',
+//         // Para ambiente de produção, usar:
+//         // uri: 'mongodb+srv://usuario:senha@cluster.mongodb.net/central-mensagens'
+//     },
+//     caminhoImagens: 'https://centraldosresultados.com',
+//     caminhoApi: 'https://centraldosresultados.com/api/centralCriadores',
+//     logo: '/img/logoMobile.png'
+// }
 
 /**
  * Objeto de configuração para a conexão com o Firebase.
