@@ -7,7 +7,8 @@
  */
 
 // Carrega variáveis de ambiente se disponível
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 /**
  * Objeto contendo as configurações principais da aplicação.
@@ -134,9 +135,8 @@ const pegaIdContatoConfirmacao = (numero) => {
     else return false;
 };
 
-module.exports = {
+export {
     configuracoes,
-    //configuracoesWeb: configuracoes, // Opção comentada para exportar configurações web separadamente
     contatosConfirmacao,
     pegaIdContatoConfirmacao,
     firebaseConfig,

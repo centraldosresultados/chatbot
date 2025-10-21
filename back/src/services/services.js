@@ -1,6 +1,6 @@
-const { configuracoes: config } = require("../config");
-const { encode } = require("js-base64");
-const https = require("https"); // Adicionado require para https
+import { configuracoes as config } from '../config.js';
+import { encode } from 'js-base64';
+import https from 'https';
 
 function _converteParametrosparaUrl(parametros) {
   let convertedParams; // Alterado para evitar redeclaração de 'retorno'
@@ -94,7 +94,7 @@ function salvarDadosLocais(nomeArmazenamento, dadosSalvar) {
   localStorage.setItem(nomeArmazenamento, JSON.stringify(dadosSalvar));
 }
 
-module.exports = {
+export {
   executaFuncaoClasse,
   salvarDadosLocais,
   buscarDadosLocais,

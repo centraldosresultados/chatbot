@@ -1,17 +1,17 @@
-const mysql = require("mysql");
+import mysql from 'mysql';
 
 // Import the functions you need from the SDKs you need
-const { initializeApp } = require("firebase/app");
-const {
+import { initializeApp } from 'firebase/app';
+import {
   getDatabase,
   ref,
   set,
   get,
   child,
   push,
-} = require("firebase/database");
+} from 'firebase/database';
 
-const { configuracoes: config, firebaseConfig } = require("../config");
+import { configuracoes as config, firebaseConfig } from '../config.js';
 
 // Configuração da conexão com o banco de dados MySQL
 const con = mysql.createConnection({
@@ -148,10 +148,10 @@ const buscarCriadoresSelecionados = (codigos) => {
   });
 }
 
-module.exports = {
-  buscarSolicitacao, // Exporta a função para buscar no MySQL
-  salvarSolicitacaoFB, // Exporta a função para salvar no Firebase
-  buscarSolicitacaoFB, // Exporta a função para buscar no Firebase
+export {
+  buscarSolicitacao,
+  salvarSolicitacaoFB,
+  buscarSolicitacaoFB,
   buscaTodosCriadores,
   buscarCriadoresSelecionados
 };

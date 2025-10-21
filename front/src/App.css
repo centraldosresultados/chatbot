@@ -218,54 +218,6 @@
   border-color: #007bff;
 }
 
-/* Controles WhatsApp no Sidebar */
-.whatsapp-controls {
-  border-top: 1px solid #dee2e6;
-  padding-top: 20px;
-}
-
-.whatsapp-controls h4 {
-  margin: 0 0 15px 0;
-  color: #495057;
-  font-size: 16px;
-}
-
-.control-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 15px;
-}
-
-.control-buttons button {
-  padding: 8px 12px;
-  font-size: 12px;
-  border-radius: 4px;
-}
-
-.status-info {
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
-  border-radius: 4px;
-  padding: 10px;
-  margin-top: 10px;
-}
-
-.status-info p {
-  margin: 2px 0;
-  font-size: 12px;
-}
-
-.qr-code {
-  margin-top: 15px;
-  text-align: center;
-}
-
-.qr-code img {
-  max-width: 200px;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-}
 
 /* Conteúdo Principal */
 .main-content {

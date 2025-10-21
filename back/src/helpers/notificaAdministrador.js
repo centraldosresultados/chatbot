@@ -2,7 +2,7 @@
  * Rotina para notificar o administrador em caso de falhas ou desconexão do WhatsApp.
  * Envia uma mensagem para o telefone definido em contatoAdministrador no config.js.
  */
-const { contatoAdministrador } = require('../config');
+import { contatoAdministrador } from '../config.js';
 
 // Garantir que contatoAdministrador está definido corretamente
 function getTelefoneAdministrador() {
@@ -13,9 +13,9 @@ function getTelefoneAdministrador() {
 }
 
 // Função para obter conexaoBot de forma dinâmica, evitando dependência circular
-function getConexaoBot() {
+async function getConexaoBot() {
   try {
-    const { conexaoBot } = require('../services/conexaoZap');
+    const { conexaoBot } = await import('../services/conexaoZap.js');
     return conexaoBot;
   } catch (error) {
     console.warn('[notificaAdministrador] Não foi possível importar conexaoBot:', error.message);
@@ -72,4 +72,4 @@ async function notificaConexao(reconexao = false) {
   await notificaAdministrador(motivo);
 }
 
-module.exports = { notificaAdministrador, notificaConexao };
+export { notificaAdministrador, notificaConexao };

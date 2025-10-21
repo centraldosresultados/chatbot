@@ -55,7 +55,10 @@ export const whatsappAPI = {
     }),
   
   // Desconectar WhatsApp
-  disconnect: () => request('/api/disconnect'),
+  disconnect: () => request('/api/disconnect', { method: 'POST' }),
+  
+  // Deslogar WhatsApp (remove credenciais)
+  logout: () => request('/api/logout', { method: 'POST' }),
   
   // Obter número conectado
   getConnectedNumber: () => request('/api/connected-number')

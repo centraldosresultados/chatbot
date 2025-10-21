@@ -1,4 +1,4 @@
-const { configuracoes: config } = require("../config");
+import { configuracoes as config } from '../config.js';
 
 /**
  * Monta a mensagem para envio de senha provisória.
@@ -173,7 +173,7 @@ Proprietário atual: ${dados.criador_atual}
     return retorno;
 };
 
-module.exports = {
+export {
     montaMensagemVinculacaoConfirmacao,
     montaMensagemCadastroValidacao,
     montaMensagemErroCadastroValidacao,

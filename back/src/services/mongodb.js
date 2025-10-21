@@ -4,8 +4,8 @@
  * @version 1.0.0
  */
 
-const { MongoClient, ObjectId } = require('mongodb');
-const { configuracoes } = require('../config');
+import { MongoClient, ObjectId } from 'mongodb';
+import { configuracoes } from '../config.js';
 
 class MongoDBService {
     constructor() {
@@ -561,4 +561,4 @@ class MongoDBService {
 // Instância singleton
 const mongoService = new MongoDBService();
 
-module.exports = mongoService;
+export default mongoService;

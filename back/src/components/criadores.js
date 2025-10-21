@@ -5,7 +5,7 @@
  * @version 1.0.0
  */
 
-const { executaFuncaoClasse } = require("../services/services");
+import { executaFuncaoClasse } from '../services/services.js';
 
 /**
  * Monta a mensagem de confirmação de cadastro validado.
@@ -93,7 +93,7 @@ function enviarResetSenha(/*parametros, callback*/) {
   console.warn("Função enviarResetSenha não implementada.");
 }
 
-module.exports = {
+export {
   validarCadastro,
   enviarResetSenha,
 };

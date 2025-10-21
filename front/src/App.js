@@ -7,8 +7,7 @@ import ListaValidacoesCadastro from './components/ListaValidacoesCadastro';
 import ListaEnviosSenhas from './components/ListaEnviosSenhas';
 import ListaMensagensEnviadas from './components/ListaMensagensEnviadas';
 import ChatWhatsApp from './components/ChatWhatsApp';
-import TesteReenvioAlternativo from './components/TesteReenvioAlternativo';
-import FerramentasMonitoramento from './components/FerramentasMonitoramento';
+import InformacoesConexao from './components/InformacoesConexao';
 import { whatsappAPI, polling } from './services/api';
 
 function App() {
@@ -97,36 +96,6 @@ function App() {
     }
   }, [isLoggedIn, status.Conectado]);
 
-  // Funções de controle WhatsApp
-  const handleConectar = async () => {
-    try {
-      const data = await whatsappAPI.connect('react-session');
-      setResponseArea(prev => prev + `Conectar: ${data.message}\n`);
-    } catch (error) {
-      setResponseArea(prev => prev + `Erro ao conectar: ${error.message}\n`);
-    }
-  };
-
-  const handleDesconectar = async () => {
-    try {
-      const data = await whatsappAPI.disconnect();
-      setResponseArea(prev => prev + `Desconectar: ${data.message}\n`);
-      setStatus({});
-      setQrCode('');
-    } catch (error) {
-      setResponseArea(prev => prev + `Erro ao desconectar: ${error.message}\n`);
-    }
-  };
-
-  const handleVerificar = async () => {
-    try {
-      const data = await whatsappAPI.getStatus();
-      setResponseArea(prev => prev + `Status: ${JSON.stringify(data.contato, null, 2)}\n`);
-      setStatus(data.contato || {});
-    } catch (error) {
-      setResponseArea(prev => prev + `Erro ao verificar: ${error.message}\n`);
-    }
-  };
 
   return (
     <div className="App">
@@ -251,49 +220,13 @@ function App() {
                 </li>
                 <li>
                   <button 
-                    className={activeTab === 'reenvioAlternativo' ? 'active' : ''} 
-                    onClick={() => setActiveTab('reenvioAlternativo')}
+                    className={activeTab === 'informacoes' ? 'active' : ''} 
+                    onClick={() => setActiveTab('informacoes')}
                   >
-                    🔄 Reenvio Alternativo
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    className={activeTab === 'ferramentasMonitoramento' ? 'active' : ''} 
-                    onClick={() => setActiveTab('ferramentasMonitoramento')}
-                  >
-                    🛠️ Ferramentas
+                    📡 Informações & Conexão
                   </button>
                 </li>
               </ul>
-
-              {/* Controles WhatsApp no Menu Lateral */}
-              <div className="whatsapp-controls">
-                <h4>Conexão WhatsApp</h4>
-                <div className="control-buttons">
-                  <button onClick={handleConectar}>
-                    Conectar
-                  </button>
-                  <button onClick={handleDesconectar}>
-                    Desconectar
-                  </button>
-                  <button onClick={handleVerificar}>
-                    Verificar
-                  </button>
-                </div>
-                {status && status.Conectado && (
-                  <div className="status-info">
-                    <p>✅ {status.status}</p>
-                    <p>📱 {status.telefone}</p>
-                  </div>
-                )}
-                {qrCode && (
-                  <div className="qr-code">
-                    <p>Escaneie o QR Code:</p>
-                    <img src={qrCode} alt="QR Code" />
-                  </div>
-                )}
-              </div>
             </>
           )}
           
@@ -350,11 +283,11 @@ function App() {
                 💬
               </button>
               <button 
-                className={`icon-button ${activeTab === 'reenvioAlternativo' ? 'active' : ''}`}
-                onClick={() => setActiveTab('reenvioAlternativo')}
-                title="Reenvio Alternativo"
+                className={`icon-button ${activeTab === 'informacoes' ? 'active' : ''}`}
+                onClick={() => setActiveTab('informacoes')}
+                title="Informações & Conexão"
               >
-                🔄
+                📡
               </button>
             </div>
           )}
@@ -383,11 +316,8 @@ function App() {
           {activeTab === 'listaMensagens' && (
             <ListaMensagensEnviadas setResponseArea={setResponseArea} />
           )}
-          {activeTab === 'reenvioAlternativo' && (
-            <TesteReenvioAlternativo setResponseArea={setResponseArea} />
-          )}
-          {activeTab === 'ferramentasMonitoramento' && (
-            <FerramentasMonitoramento setResponseArea={setResponseArea} />
+          {activeTab === 'informacoes' && (
+            <InformacoesConexao />
           )}
           {activeTab === 'testarNumero' && (
             <div className="event-test">

@@ -5,25 +5,25 @@
  * @license MIT
  */
 
-const express = require('express');
-const cors = require('cors');
-const { existsSync } = require("fs");
-const QRCode = require("qrcode");
-const { readFileSync } = require("fs");
+import express from 'express';
+import cors from 'cors';
+import { existsSync, readFileSync, rmSync } from 'fs';
+import https from 'https';
+import QRCode from 'qrcode';
 
-const {
+import {
     montaMensagemCadastroValidacao,
     montaMensagemEnvioSenha,
     montaMensagemErroCadastroValidacao,
     montaMensagemErroEnvioSenha,
-} = require("./src/helpers/funcoesAuxiliares");
+} from "./src/helpers/funcoesAuxiliares.js";
 
-const { statusMensagens, conexaoBot } = require("./src/services/conexaoZap");
-const { vinculacaoes } = require("./src/components/vinculacoes");
-const { notificaAdministrador, notificaConexao } = require('./src/helpers/notificaAdministrador');
-const { contatosConfirmacao, configuracoes: config } = require("./src/config");
-const { buscaTodosCriadores, buscarCriadoresSelecionados } = require("./src/services/conexao");
-const mongoService = require("./src/services/mongodb");
+import { conexaoBot, statusMensagens } from "./src/services/conexaoZap.js";
+import { vinculacaoes } from "./src/components/vinculacoes.js";
+import { notificaAdministrador, notificaConexao } from './src/helpers/notificaAdministrador.js';
+import { contatosConfirmacao, configuracoes as config } from "./src/config.js";
+import { buscaTodosCriadores, buscarCriadoresSelecionados } from "./src/services/conexao.js";
+import mongoService from "./src/services/mongodb.js";
 
 // ===== CONFIGURAÇÃO EXPRESS =====
 const app = express();
@@ -43,16 +43,70 @@ let contato = {}; // Informações do contato WhatsApp conectado
 let qrCodeAtual = null; // QR Code atual
 let mensagensNovas = []; // Buffer de mensagens recebidas
 let statusAtualizacoes = []; // Buffer de atualizações de status
+let conversasCache = {}; // Cache de conversas (substituindo getChats do whatsapp-web.js)
+
+// Listener para mensagens recebidas (captura eventos do Baileys)
+global.onMessageReceived = (msg) => {
+    try {
+        const chatId = msg.key.remoteJid;
+        const texto = msg.message?.conversation 
+            || msg.message?.extendedTextMessage?.text 
+            || msg.message?.imageMessage?.caption
+            || '[Mídia]';
+        
+        const numeroLimpo = chatId.split('@')[0].replace('55', '');
+        
+        // Adicionar ao cache de conversas
+        if (!conversasCache[chatId]) {
+            conversasCache[chatId] = {
+                id: chatId,
+                nome: numeroLimpo,
+                ultimaMensagem: texto.substring(0, 50),
+                timestamp: Date.now(),
+                naoLidas: 1,
+                tipo: chatId.includes('@g.us') ? 'grupo' : 'individual'
+            };
+        } else {
+            conversasCache[chatId].ultimaMensagem = texto.substring(0, 50);
+            conversasCache[chatId].timestamp = Date.now();
+            if (!msg.key.fromMe) {
+                conversasCache[chatId].naoLidas = (conversasCache[chatId].naoLidas || 0) + 1;
+            }
+        }
+        
+        // Adicionar ao buffer de mensagens novas para polling
+        if (!msg.key.fromMe) {
+            const messageData = {
+                id: msg.key.id,
+                from: chatId,
+                body: texto,
+                timestamp: msg.messageTimestamp || Date.now(),
+                type: Object.keys(msg.message)[0],
+                hasMedia: !!(msg.message.imageMessage || msg.message.videoMessage || msg.message.audioMessage)
+            };
+            mensagensNovas.push(messageData);
+
+            // Limita o buffer a 100 mensagens
+            if (mensagensNovas.length > 100) {
+                mensagensNovas.shift();
+            }
+        }
+        
+        console.log(`[Express] Mensagem adicionada ao cache: ${chatId}`);
+    } catch (error) {
+        console.error('[Express] Erro ao processar mensagem recebida:', error);
+    }
+};
 
 /**
- * Monta o objeto de contato com informações do cliente do WhatsApp.
+ * Monta o objeto de contato com informações do cliente do WhatsApp (Baileys).
  */
-const montaContato = async (clientBot) => {
+const montaContato = async () => {
     return new Promise((resolve) => {
         contato = {
             Conectado: true,
             status: "Conectado",
-            telefone: clientBot.info.me.user,
+            telefone: conexaoBot.connectedNumber,
         };
         resolve(contato);
     });
@@ -76,8 +130,8 @@ app.get('/health', (req, res) => {
  * Obter status da conexão WhatsApp
  */
 app.get('/api/status', (req, res) => {
-    // Verificar se o WhatsApp está realmente conectado
-    const realmenteConectado = !!(conexaoBot.clientBot && conexaoBot.clientBot.info);
+    // Com Baileys, verificar usando connectionStatus e info
+    const realmenteConectado = conexaoBot.connectionStatus === 'connected' && !!conexaoBot.info;
     
     // Se não está conectado mas contato diz que sim, corrigir
     if (!realmenteConectado && contato.Conectado) {
@@ -87,13 +141,24 @@ app.get('/api/status', (req, res) => {
         };
     }
     
+    // Se está conectado e contato não está atualizado, atualizar
+    if (realmenteConectado && !contato.Conectado && conexaoBot.info) {
+        contato = {
+            Conectado: true,
+            status: "Conectado",
+            telefone: conexaoBot.connectedNumber
+        };
+    }
+    
     res.json({
         success: true,
         contato: contato,
         conectado: realmenteConectado,
         debug: {
-            temClientBot: !!conexaoBot.clientBot,
-            temInfo: !!(conexaoBot.clientBot && conexaoBot.clientBot.info)
+            connectionStatus: conexaoBot.connectionStatus,
+            temSock: !!conexaoBot.sock,
+            temInfo: !!conexaoBot.info,
+            numero: conexaoBot.connectedNumber
         }
     });
 });
@@ -101,16 +166,31 @@ app.get('/api/status', (req, res) => {
 /**
  * Obter QR Code para conexão
  */
-app.get('/api/qrcode', (req, res) => {
-    if (qrCodeAtual) {
+app.get('/api/qrcode', async (req, res) => {
+    console.log('🔍 GET /api/qrcode');
+    console.log('🔍 conexaoBot.qrCodeData existe?', !!conexaoBot.qrCodeData);
+    
+    if (!conexaoBot.qrCodeData) {
+        return res.json({
+            success: false,
+            message: "QR Code não disponível. Inicie uma conexão primeiro.",
+            qrCode: null
+        });
+    }
+
+    try {
+        // Converter QR string para imagem base64
+        const qrImage = await QRCode.toDataURL(conexaoBot.qrCodeData);
+        
         res.json({
             success: true,
-            qrCode: qrCodeAtual
+            qrCode: qrImage
         });
-    } else {
-        res.json({
+    } catch (error) {
+        console.error('❌ Erro ao gerar QR Code:', error);
+        res.status(500).json({
             success: false,
-            message: 'QR Code não disponível. Inicie uma conexão primeiro.'
+            error: 'Erro ao gerar QR Code'
         });
     }
 });
@@ -130,6 +210,68 @@ app.post('/api/conectar', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.message
+        });
+    }
+});
+
+/**
+ * Desconectar WhatsApp (sem remover credenciais)
+ */
+app.post('/api/disconnect', async (req, res) => {
+    try {
+        if (conexaoBot.sock) {
+            await conexaoBot.sock.end();
+            console.log('[Express] Conexão fechada (credenciais mantidas)');
+        }
+        
+        contato = {
+            Conectado: false,
+            status: "Desconectado"
+        };
+        
+        res.json({
+            success: true,
+            message: 'Desconectado com sucesso. Use /api/conectar para reconectar.'
+        });
+    } catch (error) {
+        console.error('[Express] Erro ao desconectar:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Erro ao desconectar: ' + error.message
+        });
+    }
+});
+
+/**
+ * Deslogar do WhatsApp (remove credenciais completamente)
+ */
+app.post('/api/logout', async (req, res) => {
+    try {
+        if (conexaoBot.sock) {
+            await conexaoBot.sock.logout();
+            console.log('[Express] Deslogado do WhatsApp (credenciais removidas)');
+        }
+        
+        contato = {
+            Conectado: false,
+            status: "Desconectado"
+        };
+        
+        // Limpar pasta de credenciais
+        const authPath = './auth_info_baileys';
+        if (existsSync(authPath)) {
+            rmSync(authPath, { recursive: true, force: true });
+        }
+        
+        res.json({
+            success: true,
+            message: 'Deslogado com sucesso. Será necessário novo QR Code.'
+        });
+    } catch (error) {
+        console.error('[Express] Erro ao deslogar:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Erro ao deslogar: ' + error.message
         });
     }
 });
@@ -171,6 +313,26 @@ app.post('/api/mensagens/enviar', async (req, res) => {
 
         console.log(`📤 Resultado do envio:`, retornoMensagem);
 
+        // Adicionar ao cache de conversas se enviado com sucesso
+        if (retornoMensagem.sucesso && retornoMensagem.numero) {
+            const chatId = retornoMensagem.numero; // JID completo
+            const numeroLimpo = numero.replace(/\D/g, '');
+            
+            if (!conversasCache[chatId]) {
+                conversasCache[chatId] = {
+                    id: chatId,
+                    nome: numeroLimpo,
+                    ultimaMensagem: mensagem.substring(0, 50),
+                    timestamp: Date.now(),
+                    naoLidas: 0,
+                    tipo: 'individual'
+                };
+            } else {
+                conversasCache[chatId].ultimaMensagem = mensagem.substring(0, 50);
+                conversasCache[chatId].timestamp = Date.now();
+            }
+        }
+
         res.json({
             success: true,
             resultado: retornoMensagem
@@ -193,22 +355,20 @@ app.post('/api/mensagens/enviar', async (req, res) => {
  */
 app.get('/api/conversas', async (req, res) => {
     try {
-        if (!conexaoBot.clientBot) {
+        if (!conexaoBot.sock || conexaoBot.connectionStatus !== 'connected') {
             return res.status(400).json({
                 success: false,
                 error: 'WhatsApp não conectado'
             });
         }
 
-        const chats = await conexaoBot.clientBot.getChats();
-        const conversas = chats.map(chat => ({
-            id: chat.id._serialized,
-            nome: chat.name || 'Sem nome',
-            ultimaMensagem: chat.lastMessage?.body || '',
-            timestamp: chat.timestamp || 0,
-            naoLidas: chat.unreadCount || 0,
-            tipo: chat.isGroup ? 'grupo' : 'individual'
-        }));
+        // Baileys não mantém store automático - usar cache baseado em mensagens
+        console.log('[Express] Retornando conversas do cache');
+        
+        // Converter cache de objeto para array
+        const conversas = Object.values(conversasCache).sort((a, b) => {
+            return (b.timestamp || 0) - (a.timestamp || 0);
+        });
 
         res.json({
             success: true,
@@ -230,15 +390,16 @@ app.get('/api/conversas/:chatId/mensagens', async (req, res) => {
         const { chatId } = req.params;
         const { limit = 50 } = req.query;
 
-        if (!conexaoBot.clientBot) {
+        if (!conexaoBot.sock || conexaoBot.connectionStatus !== 'connected') {
             return res.status(400).json({
                 success: false,
                 error: 'WhatsApp não conectado'
             });
         }
 
-        const chat = await conexaoBot.clientBot.getChatById(chatId);
-        const messages = await chat.fetchMessages({ limit: parseInt(limit) });
+        // NOTA: Baileys não mantém store de mensagens automaticamente
+        console.warn('[Express] getChatById(): Baileys não tem método built-in. Retornando array vazio.');
+        const messages = [];
 
         const mensagens = messages.map(msg => ({
             id: msg.id.id,
@@ -347,14 +508,28 @@ app.post('/api/validacao/enviar', async (req, res) => {
 
         // Se houver erro, notifica os contatos de confirmação
         if (envio.erro !== undefined) {
-            const { montaMensagemErroCadastroValidacao } = require('./src/helpers/funcoesAuxiliares');
-            const { contatosConfirmacao } = require('./src/config');
+            // Importações já feitas no topo
             
             for (const item of contatosConfirmacao) {
                 console.log(montaMensagemErroCadastroValidacao({ nome, telefone }));
                 const dadosErro = montaMensagemErroCadastroValidacao({ nome, telefone });
                 await conexaoBot.enviarMensagem(item.telefone, dadosErro.texto);
             }
+        }
+
+        // Adicionar ao cache se enviado com sucesso
+        if (envio.sucesso && envio.numero) {
+            const chatId = envio.numero;
+            const numeroLimpo = telefone.replace(/\D/g, '');
+            
+            conversasCache[chatId] = {
+                id: chatId,
+                nome: nome || numeroLimpo,
+                ultimaMensagem: 'Validação de cadastro enviada',
+                timestamp: Date.now(),
+                naoLidas: 0,
+                tipo: 'individual'
+            };
         }
 
         res.json({
@@ -412,8 +587,7 @@ app.post('/api/senha/enviar', async (req, res) => {
 
         // Se houver erro, notifica os contatos de confirmação
         if (retornoMensagem.erro !== undefined) {
-            const { montaMensagemErroEnvioSenha } = require('./src/helpers/funcoesAuxiliares');
-            const { contatosConfirmacao } = require('./src/config');
+            // Importações já feitas no topo
             
             for (const item of contatosConfirmacao) {
                 console.log(montaMensagemErroEnvioSenha(args));
@@ -568,137 +742,14 @@ app.post('/api/notificar/administrador', async (req, res) => {
 // ===== FUNÇÃO DE CONEXÃO WHATSAPP =====
 
 const conectarZapBot = async (nomeSessao, tipoInicializacao = "padrao") => {
-    console.log("Conectando ao WhatsApp");
+    console.log("[Express] Iniciando conexão WhatsApp via Baileys...");
+    
+    // Com Baileys, apenas chamamos pegaClientBot que já inicializa tudo
+    // Os eventos (qr, ready, message, message_ack) são gerenciados internamente no conexaoZap.js
     await conexaoBot.pegaClientBot();
-
-    // Evento: QR Code gerado
-    conexaoBot.clientBot.on("qr", (qr) => {
-        if (tipoInicializacao == "sistema") {
-            console.log("Reiniciando pelo Sistema");
-            return false;
-        }
-
-        console.log("Gerando QRCode");
-        QRCode.toDataURL(qr)
-            .then((base64) => {
-                qrCodeAtual = base64; // Armazena o QR Code
-                console.log("QR Code disponível em GET /api/qrcode");
-            })
-            .catch((err) => {
-                console.log(err);
-            });
-    });
-
-    // Evento: WhatsApp conectado e pronto
-    conexaoBot.clientBot.on("ready", async () => {
-        console.log("Pronto");
-        contato = await montaContato(conexaoBot.clientBot);
-        qrCodeAtual = null; // Limpa o QR Code
-        
-        await notificaConexao(tipoInicializacao === 'sistema');
-        
-        // Iniciar sistema de verificação periódica de reenvios automáticos
-        try {
-            conexaoBot.iniciarVerificacaoPeriodicaReenvios();
-        } catch (error) {
-            console.error('Erro ao iniciar verificação periódica de reenvios:', error);
-        }
-    });
-
-    // Evento: Mensagem recebida
-    conexaoBot.clientBot.on("message", async (message) => {
-        console.log("Recebendo Mensagem");
-
-        // Adiciona ao buffer de mensagens novas (para polling)
-        if (!message.fromMe) {
-            const messageData = {
-                id: message.id.id,
-                from: message.from,
-                body: message.body,
-                timestamp: message.timestamp,
-                type: message.type,
-                hasMedia: message.hasMedia
-            };
-            mensagensNovas.push(messageData);
-
-            // Limita o buffer a 100 mensagens
-            if (mensagensNovas.length > 100) {
-                mensagensNovas.shift();
-            }
-        }
-
-        // Teste de Conexão
-        if (message._data.body == "Teste Conexão") {
-            const destinatarioRetorno = message._data.from
-                .split("@")[0]
-                .substring(2, 13);
-            conexaoBot.enviarMensagem(
-                destinatarioRetorno,
-                "Conexão Ativa, obrigado por consultar",
-            );
-        }
-
-        // Processa a mensagem
-        conexaoBot.recebeMensagem(message);
-    });
-
-    // Evento: Atualização de status de mensagem
-    conexaoBot.clientBot.on("message_ack", async (mensagem) => {
-        const id = mensagem.id.id;
-        const info = await mensagem.getInfo();
-
-        try {
-            const altera = {
-                enviado: info.deliveryRemaining <= 0,
-                lida: info.readRemaining <= 0,
-            };
-
-            statusMensagens.setMensagem(id, altera);
-
-            // Adiciona ao buffer de atualizações (para polling)
-            let status = 'sent';
-            if (altera.lida) {
-                status = 'read';
-            } else if (altera.enviado) {
-                status = 'delivered';
-            }
-            
-            statusAtualizacoes.push({
-                messageId: id,
-                status: status,
-                timestamp: Date.now()
-            });
-
-            // Limita o buffer a 100 atualizações
-            if (statusAtualizacoes.length > 100) {
-                statusAtualizacoes.shift();
-            }
-
-            // Atualizar status no MongoDB
-            let novoStatus = 'Enviada';
-            if (altera.lida) {
-                novoStatus = 'Lida';
-            } else if (altera.enviado) {
-                novoStatus = 'Entregue';
-            }
-
-            const tabelas = ['tb_envio_validacoes', 'tb_envio_senhas', 'tb_envio_mensagens'];
-            
-            for (const tabela of tabelas) {
-                try {
-                    await mongoService.atualizarStatusMensagem(tabela, id, novoStatus);
-                } catch {
-                    console.log(`[MongoDB] Mensagem ${id} não encontrada em ${tabela}`);
-                }
-            }
-
-        } catch (e) {
-            console.error("Erro ao processar message_ack:", e);
-        }
-    });
-
-    // Inicializa a conexão com o WhatsApp
-    conexaoBot.clientBot.initialize();
+    
+    console.log("[Express] Conexão WhatsApp iniciada. Aguardando QR Code ou reconexão automática.");
+    console.log("[Express] Os eventos são gerenciados pelo Baileys internamente.");
 };
 
 // ===== INICIALIZAÇÃO =====
@@ -710,13 +761,13 @@ const conectarZapBot = async (nomeSessao, tipoInicializacao = "padrao") => {
     await conexaoBot.pegaClientBot();
     vinculacaoes.populaVinculacoes();
 
-    // Verifica se há conexão salva localmente
-    const reconectar = conexaoBot.clientBot.info == undefined && existsSync("./.wwebjs_auth");
+    // Verifica se há conexão salva localmente (Baileys usa auth_info_baileys)
+    const reconectar = !conexaoBot.info && existsSync("./auth_info_baileys");
     if (reconectar) {
-        console.log("Reconectando no Recarregamento");
+        console.log("Reconectando no Recarregamento (usando credenciais Baileys salvas)");
         await conectarZapBot("", "sistema");
     } else {
-        console.log("Não Conectando");
+        console.log("Sem credenciais salvas. Aguardando comando de conexão manual.");
     }
 
     // Inicia o servidor Express
@@ -747,7 +798,6 @@ const conectarZapBot = async (nomeSessao, tipoInicializacao = "padrao") => {
         });
     } else {
         // HTTPS para produção
-        const https = require('https');
         const httpsServer = https.createServer({
             key: readFileSync("/etc/letsencrypt/live/chatbot.centraldosresultados.com/privkey.pem"),
             cert: readFileSync("/etc/letsencrypt/live/chatbot.centraldosresultados.com/fullchain.pem"),
@@ -760,5 +810,5 @@ const conectarZapBot = async (nomeSessao, tipoInicializacao = "padrao") => {
     }
 })();
 
-module.exports = app;
+    export default app;
 

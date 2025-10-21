@@ -5,19 +5,19 @@
  * @version 1.0.0
  */
 
-const { getDatabase, ref, get, child, onValue } = require("firebase/database");
-const {
-  contatosConfirmacao, // Lista de contatos que podem confirmar vinculações
-  firebaseConfig,      // Configurações do Firebase
-  pegaIdContatoConfirmacao, // Função para obter ID de contato pelo telefone
-} = require("../config");
-const {
-  montaMensagemVinculacaoConfirmacao, // Função para criar a mensagem de confirmação
-} = require("../helpers/funcoesAuxiliares");
-const { salvarSolicitacaoFB } = require("../services/conexao"); // Para salvar dados no Firebase
-const { conexaoBot } = require("../services/conexaoZap");    // Para enviar mensagens via WhatsApp
-const { executaFuncaoClasse } = require("../services/services"); // Para interagir com a API backend
-const { initializeApp } = require("firebase/app");
+import { getDatabase, ref, get, child, onValue } from 'firebase/database';
+import {
+  contatosConfirmacao,
+  firebaseConfig,
+  pegaIdContatoConfirmacao,
+} from '../config.js';
+import {
+  montaMensagemVinculacaoConfirmacao,
+} from '../helpers/funcoesAuxiliares.js';
+import { salvarSolicitacaoFB } from '../services/conexao.js';
+import { conexaoBot } from '../services/conexaoZap.js';
+import { executaFuncaoClasse } from '../services/services.js';
+import { initializeApp } from 'firebase/app';
 
 // Inicializa o Firebase App. Não é necessário atribuir a uma variável se não for usada diretamente em outros locais deste arquivo.
 initializeApp(firebaseConfig);
@@ -26,20 +26,10 @@ const dbRef = ref(db);    // Cria uma referência para a raiz do banco de dados.
 const tabela = "vinculacoes_solicitacoes"; // Nome da tabela/nó no Firebase para as solicitações.
 
 /**
- * Objeto IIFE (Immediately Invoked Function Expression) que encapsula a lógica de vinculações.
+ * Objeto que encapsula a lógica de vinculações.
  * @namespace vinculacaoes
  */
-(async () => {
-  // Observador para atualizações na tabela de vinculações no Firebase.
-  // Quando há uma alteração, repopula a lista local de vinculações.
-  onValue(ref(db, tabela), (/*snapshot*/) => {
-    // O parâmetro snapshot (anteriormente 'dados') contém os dados, mas não é usado diretamente aqui,
-    // pois populaVinculacoes busca todos os dados novamente.
-    console.log("Detectada alteração em 'vinculacoes_solicitacoes', repopulando...");
-    vinculacaoes.populaVinculacoes();
-  });
-
-  const vinculacaoes = {
+const vinculacaoes = {
     /** @type {Array<Object> | undefined} */
     vinculacoes: undefined, // Cache local das solicitações de vinculação.
 
@@ -238,9 +228,13 @@ const tabela = "vinculacoes_solicitacoes"; // Nome da tabela/nó no Firebase par
         await conexaoBot.enviarMensagem(origem, "Ocorreu um erro interno ao processar sua resposta.");
       }
     },
-  };
+};
 
-  module.exports = {
-    vinculacaoes,
-  };
-})();
+// Observador para atualizações na tabela de vinculações no Firebase.
+// Quando há uma alteração, repopula a lista local de vinculações.
+onValue(ref(db, tabela), (/*snapshot*/) => {
+  console.log("Detectada alteração em 'vinculacoes_solicitacoes', repopulando...");
+  vinculacaoes.populaVinculacoes();
+});
+
+export { vinculacaoes };
