@@ -1,4 +1,86 @@
+.wwebjs_authLocal/
+.wwebjs_cacheLocal/
+
+# Dependências
 node_modules/
-.DS_store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.backup
+
+# Autenticação WhatsApp (Baileys)
+auth_info_baileys/
+
+# Autenticação WhatsApp (whatsapp-web.js)
 .wwebjs_auth/
 .wwebjs_cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Backups
+backup_*.sql
+backup_mongo_*/
+*.backup
+
+# Sistema Operacional
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Testes
+coverage/
+.nyc_output/
+
+# Temporários
+tmp/
+temp/
+*.tmp
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# Outros
+*.pid
+*.seed
+*.pid.lock
+.cache
+

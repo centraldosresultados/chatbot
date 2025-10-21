@@ -1,0 +1,93 @@
+# ===================================
+# ARQUIVO DE CONFIGURAÇÃO - CHATBOT
+# ===================================
+# Copie este arquivo para .env e preencha com seus valores
+# cp ENV_EXAMPLE.txt .env
+
+# ===================================
+# SERVIDOR
+# ===================================
+NODE_ENV=development  # development | production
+PORT=3101  # Usar 3101 durante migração, depois mudar para 3100
+
+# ===================================
+# MYSQL - Banco de Criadores
+# ===================================
+MYSQL_HOST=centraldosresultados.com
+MYSQL_USER=central_resultados
+MYSQL_PASSWORD=***INSIRA_SENHA_AQUI***
+MYSQL_DATABASE=central_resultados_criadores
+MYSQL_PORT=3306
+MYSQL_CONNECTION_LIMIT=10
+
+# ===================================
+# MONGODB - Histórico de Mensagens
+# ===================================
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/central-mensagens?retryWrites=true&w=majority
+
+# ===================================
+# FIREBASE - Sistema de Vinculações
+# (OPCIONAL - Configurar apenas se decidir manter Firebase)
+# ===================================
+# FIREBASE_API_KEY=***
+# FIREBASE_AUTH_DOMAIN=central-criadores.firebaseapp.com
+# FIREBASE_DATABASE_URL=https://central-criadores-default-rtdb.firebaseio.com
+# FIREBASE_PROJECT_ID=central-criadores
+# FIREBASE_STORAGE_BUCKET=central-criadores.appspot.com
+# FIREBASE_MESSAGING_SENDER_ID=***
+# FIREBASE_APP_ID=***
+# FIREBASE_MEASUREMENT_ID=***
+
+# ===================================
+# WHATSAPP
+# ===================================
+WA_AUTH_DIR=./auth_info_baileys
+
+# ===================================
+# ADMINISTRADOR
+# ===================================
+ADMIN_NAME=Silvério
+ADMIN_PHONE=22999890738
+
+# ===================================
+# CONTATOS DE CONFIRMAÇÃO
+# JSON Array com lista de contatos para confirmação de vinculações
+# ===================================
+CONTACTS_CONFIRMATION='[{"id":28,"nome":"Silvério","telefone":"22999134200"},{"id":3,"nome":"Junior","telefone":"22998063980"},{"id":2,"nome":"Jorge","telefone":"22999881992"}]'
+
+# ===================================
+# URLs E RECURSOS
+# ===================================
+IMAGES_BASE_URL=https://centraldosresultados.com
+API_BASE_URL=https://centraldosresultados.com/api/centralCriadores
+LOGO_PATH=/img/logoMobile.png
+
+# ===================================
+# CORS
+# ===================================
+CORS_ORIGIN=*  # Mudar para https://chatbot.centraldosresultados.com em produção
+
+# ===================================
+# LOGS
+# ===================================
+LOG_LEVEL=info  # debug | info | warn | error
+LOG_FILE=logs/chatbot.log
+LOG_MAX_SIZE=10m
+LOG_MAX_FILES=7
+
+# ===================================
+# MONITORAMENTO E REENVIO
+# ===================================
+MESSAGE_TIMEOUT_MINUTES=5
+AUTO_RESEND_ENABLED=true
+CHECK_PENDING_INTERVAL=2
+MAX_SEND_RETRIES=3
+REQUEST_TIMEOUT=30000
+MAX_UPLOAD_SIZE=10
+
+# ===================================
+# DESENVOLVIMENTO
+# ===================================
+DEBUG=false
+HOT_RELOAD=true
+

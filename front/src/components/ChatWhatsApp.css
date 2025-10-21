@@ -1,0 +1,594 @@
+/* Container principal do chat */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px);
+  background: #f0f2f5;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Status do WhatsApp (topo) */
+.whatsapp-status {
+  background: linear-gradient(135deg, #128C7E 0%, #25D366 100%);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.whatsapp-status.connected {
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+}
+
+.whatsapp-status.disconnected {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.status-indicator {
+  font-size: 20px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.phone-number {
+  margin-left: auto;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 5px 12px;
+  border-radius: 15px;
+}
+
+.whatsapp-status button {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.whatsapp-status button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.whatsapp-status button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Layout principal (2 colunas) */
+.chat-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background: white;
+}
+
+/* Painel de contatos (esquerda) */
+.contacts-panel {
+  width: 380px;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+.contacts-header {
+  padding: 15px;
+  background: #f0f2f5;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.contacts-header h3 {
+  margin: 0 0 12px 0;
+  color: #111;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 10px 15px;
+  border: none;
+  background: white;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.search-box input:focus {
+  outline: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Lista de contatos */
+.contacts-list {
+  flex: 1;
+  overflow-y: auto;
+  background: white;
+}
+
+.contacts-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.contacts-list::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 3px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.contact-item:hover {
+  background: #f5f6f6;
+}
+
+.contact-item.active {
+  background: #ebebeb;
+}
+
+.contact-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.online-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background: #25D366;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.contact-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.contact-name {
+  font-weight: 600;
+  color: #111;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contact-timestamp {
+  font-size: 12px;
+  color: #667781;
+}
+
+.contact-last-message {
+  font-size: 14px;
+  color: #667781;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+.unread-badge {
+  background: #25D366;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+  margin-left: 8px;
+}
+
+/* Mensagens quando não há conexão ou contatos */
+.no-connection-message,
+.loading-message,
+.no-contacts-message {
+  padding: 40px 20px;
+  text-align: center;
+  color: #667781;
+}
+
+.no-contacts-message button {
+  margin-top: 15px;
+  background: #25D366;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Painel de mensagens (direita) */
+.messages-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #efeae2;
+  position: relative;
+}
+
+/* Background pattern do WhatsApp */
+.messages-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxyZWN0IHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgZmlsbD0iI2VmZWFlMiIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjEiIGZpbGw9IiNkOWQzY2QiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjcGF0dGVybikiLz48L3N2Zz4=');
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Header da conversa */
+.messages-header {
+  background: #f0f2f5;
+  padding: 12px 20px;
+  border-bottom: 1px solid #d1d7db;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1;
+}
+
+.contact-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contact-header-info .contact-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+}
+
+.contact-header-info .contact-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 2px;
+}
+
+.contact-header-info .contact-number {
+  font-size: 13px;
+  color: #667781;
+}
+
+/* Lista de mensagens */
+.messages-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1;
+}
+
+.messages-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-list::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 3px;
+}
+
+.message {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.message-received {
+  justify-content: flex-start;
+}
+
+.message-sent {
+  justify-content: flex-end;
+}
+
+.message-content {
+  max-width: 65%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.message-received .message-content {
+  background: white;
+  border-top-left-radius: 0;
+}
+
+.message-sent .message-content {
+  background: #d9fdd3;
+  border-top-right-radius: 0;
+}
+
+.message-text {
+  color: #111;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.message-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.message-time {
+  font-size: 11px;
+  color: #667781;
+}
+
+.message-status {
+  font-size: 14px;
+  color: #667781;
+}
+
+.message-status.read {
+  color: #53bdeb;
+}
+
+.no-messages {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #667781;
+  font-size: 14px;
+  z-index: 1;
+}
+
+/* Input de mensagem */
+.message-input-container {
+  padding: 12px 20px;
+  background: #f0f2f5;
+  border-top: 1px solid #d1d7db;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  z-index: 1;
+}
+
+.message-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 25px;
+  background: white;
+  font-size: 15px;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.message-input:focus {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.send-button {
+  background: #25D366;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(37, 211, 102, 0.3);
+}
+
+.send-button:hover:not(:disabled) {
+  background: #128C7E;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(37, 211, 102, 0.4);
+}
+
+.send-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Estado vazio (sem conversa selecionada) */
+.no-selected-contact {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  z-index: 1;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  max-width: 400px;
+}
+
+.empty-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  display: block;
+  opacity: 0.4;
+}
+
+.empty-state h3 {
+  color: #41525d;
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
+.empty-state p {
+  color: #667781;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.empty-state button {
+  background: #25D366;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.empty-state button:hover:not(:disabled) {
+  background: #128C7E;
+  transform: translateY(-2px);
+}
+
+.empty-state button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .contacts-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .chat-layout {
+    flex-direction: column;
+  }
+  
+  .messages-panel {
+    display: none;
+  }
+  
+  .chat-layout.has-selected .contacts-panel {
+    display: none;
+  }
+  
+  .chat-layout.has-selected .messages-panel {
+    display: flex;
+  }
+}
+
+/* Estados de carregamento */
+.loading-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #667781;
+}
+
+.loading-message::before {
+  content: '⏳';
+  font-size: 30px;
+  margin-right: 10px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Melhorias visuais */
+.contact-item {
+  position: relative;
+}
+
+.contact-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #25D366;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.contact-item.active::before {
+  opacity: 1;
+}
+
+/* Badges de status */
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.status-badge.enviada {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-badge.lida {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-badge.pendente {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.status-badge.falhou {
+  background: #ffebee;
+  color: #c62828;
+}
