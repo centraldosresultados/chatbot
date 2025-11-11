@@ -42,6 +42,9 @@ const conexaoBot = {
     /** @type {Function} saveCreds - Função para salvar credenciais. */
     saveCreds: null,
 
+    /** @type {string} authPath - Caminho atual das credenciais salvas. */
+    authPath: './auth_info_baileys',
+
     /** @type {Object} info - Informações do usuário conectado (similar ao client.info do whatsapp-web.js). */
     info: null,
 
@@ -52,8 +55,17 @@ const conexaoBot = {
      * @description Obtém ou inicializa a instância do socket Baileys.
      * @returns {Promise<Object>} Promessa que resolve com a instância do socket.
      */
-    async pegaClientBot() {
-        if (this.sock == undefined) {
+    async pegaClientBot(forceNew = false) {
+        if (forceNew && this.sock) {
+            try {
+                this.sock.ev.removeAllListeners();
+            } catch (err) {
+                console.warn('[Baileys] Aviso ao limpar listeners durante forceNew:', err?.message);
+            }
+            this.sock = undefined;
+        }
+
+        if (this.sock === undefined || this.connectionStatus === 'disconnected') {
             await this.initializeWhatsApp();
         }
         return this.sock;
@@ -71,6 +83,7 @@ const conexaoBot = {
         try {
             console.log('[Baileys] Inicializando conexão WhatsApp...');
             this.connectionStatus = 'connecting';
+            this.authPath = authPath;
             
             // Carregar ou criar estado de autenticação
             const { state, saveCreds } = await useMultiFileAuthState(authPath);
@@ -132,17 +145,48 @@ const conexaoBot = {
                 this.connectedNumber = null;
                 this.info = null;
                 
+                const statusCode = lastDisconnect?.error?.output?.statusCode;
+                const loggedOut = statusCode === DisconnectReason.loggedOut;
+                
+                try {
+                    if (this.sock?.ev?.removeAllListeners) {
+                        this.sock.ev.removeAllListeners();
+                    }
+                    if (this.sock?.end) {
+                        await this.sock.end();
+                    }
+                } catch (cleanupError) {
+                    console.warn('[Baileys] Aviso ao finalizar socket antigo:', cleanupError?.message);
+                }
+                
+                this.sock = undefined;
+                
                 const shouldReconnect = (lastDisconnect?.error instanceof Boom)
                     ? lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut
                     : true;
                 
                 console.log('[Baileys] ❌ Conexão fechada. Motivo:', lastDisconnect?.error?.message);
+                if (statusCode) {
+                    console.log('[Baileys] Código de desconexão:', statusCode);
+                }
                 
                 if (shouldReconnect) {
                     console.log('[Baileys] ⏳ Reconectando em 5 segundos...\n');
-                    setTimeout(() => this.initializeWhatsApp(), 5000);
+                    setTimeout(() => {
+                        this.initializeWhatsApp(this.authPath).catch((err) => {
+                            console.error('[Baileys] Erro ao tentar reconectar:', err);
+                        });
+                    }, 5000);
+                } else if (loggedOut) {
+                    console.log('[Baileys] 🔐 Deslogado. Removendo credenciais e gerando novo QR Code.\n');
+                    this.limparCredenciais();
+                    setTimeout(() => {
+                        this.initializeWhatsApp(this.authPath).catch((err) => {
+                            console.error('[Baileys] Erro ao gerar novo QR Code após logout:', err);
+                        });
+                    }, 1000);
                 } else {
-                    console.log('[Baileys] 🔐 Deslogado. Precisa gerar novo QR Code.\n');
+                    console.log('[Baileys] 🔐 Desconectado manualmente. Aguarda comando /api/conectar para novo QR Code.\n');
                 }
             } else if (connection === 'open') {
                 this.connectionStatus = 'connected';
@@ -495,6 +539,20 @@ const conexaoBot = {
 
     iniciarVerificacaoPeriodicaReenvios() {
         console.log('[Baileys] Verificação periódica de reenvios desabilitada');
+    },
+
+    /**
+     * Remove as credenciais locais para forçar novo QR Code.
+     */
+    limparCredenciais() {
+        try {
+            if (this.authPath && fs.existsSync(this.authPath)) {
+                fs.rmSync(this.authPath, { recursive: true, force: true });
+                console.log(`[Baileys] 🧹 Credenciais removidas de ${this.authPath}`);
+            }
+        } catch (error) {
+            console.error('[Baileys] Erro ao limpar credenciais:', error);
+        }
     },
 
     /**

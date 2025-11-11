@@ -727,7 +727,7 @@ const conectarZapBot = async (nomeSessao, tipoInicializacao = "padrao") => {
     }
 
     // Inicia o servidor Express
-    const PORT = config.porta || 3100;
+    const PORT = config.porta || 11001;
     
     if (config.funcionamento === "local") {
         app.listen(PORT, () => {

@@ -23,7 +23,7 @@ npm install
 Crie um arquivo `.env` na raiz do projeto:
 
 ```env
-REACT_APP_API_URL=http://localhost:3100
+REACT_APP_API_URL=http://localhost:11001
 ```
 
 Para produção:
@@ -198,7 +198,7 @@ polling.stopAll();
 ### Erro de conexão com API
 
 Verifique se:
-1. O backend Express está rodando: `http://localhost:3100/health`
+1. O backend Express está rodando: `http://localhost:11001/health`
 2. A variável `REACT_APP_API_URL` está correta
 3. CORS está configurado no backend
 

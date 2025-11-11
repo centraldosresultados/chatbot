@@ -7,7 +7,7 @@
 // Em produção, usa a variável de ambiente ou URL absoluta
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
   ? '' // Proxy do CRA cuida disso
-  : (process.env.REACT_APP_API_URL || 'http://localhost:3100');
+  : (process.env.REACT_APP_API_URL || 'https://api.chatbot.centraldosresultados.com');
 
 /**
  * Utilitário para fazer requisições HTTP

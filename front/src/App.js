@@ -15,6 +15,7 @@ function App() {
   const [qrCode, setQrCode] = useState('');
   const [status, setStatus] = useState({});
   const [activeTab, setActiveTab] = useState('chat');
+  const [qrFetchEnabled, setQrFetchEnabled] = useState(false);
   
   // Estados para controlar expansão/compressão
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
@@ -51,6 +52,8 @@ function App() {
     setIsLoggedIn(false);
     localStorage.removeItem('chatbot_login');
     polling.stopAll(); // Para todos os pollings
+    setQrFetchEnabled(false);
+    setQrCode('');
   };
 
   // Polling para status e QR Code quando logado
@@ -70,32 +73,54 @@ function App() {
         }
       }, 5000);
 
-      // Polling para QR Code (a cada 2 segundos, apenas quando não está conectado)
+      return () => {
+        polling.stop('status');
+      };
+    } else {
+      setStatus({});
+      setQrFetchEnabled(false);
+      setQrCode('');
+      polling.stop('status');
+      polling.stop('qrcode');
+    }
+  }, [isLoggedIn]);
+
+  // Controle do polling de QR Code
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    if (qrFetchEnabled && !status.Conectado) {
       polling.start('qrcode', async () => {
         try {
-          if (!status.Conectado) {
-            const data = await whatsappAPI.getQRCode();
-            if (data.success && data.qrCode) {
-              setQrCode(data.qrCode);
-              setResponseArea(prev => prev + 'QR Code recebido!\n');
-            } else {
-              setQrCode('');
-            }
+          const data = await whatsappAPI.getQRCode();
+          if (data.success && data.qrCode) {
+            setQrCode(data.qrCode);
+            setResponseArea(prev => prev + 'QR Code recebido!\n');
           } else {
-            setQrCode(''); // Limpa QR Code quando conectado
+            setQrCode('');
           }
         } catch (error) {
-          // Silencioso - QR Code pode não estar disponível
+          setQrCode('');
         }
       }, 2000);
-
-      // Cleanup ao deslogar
-      return () => {
-        polling.stopAll();
-      };
+    } else {
+      polling.stop('qrcode');
+      setQrCode('');
     }
-  }, [isLoggedIn, status.Conectado]);
 
+    return () => {
+      polling.stop('qrcode');
+    };
+  }, [isLoggedIn, qrFetchEnabled, status.Conectado, setResponseArea]);
+
+  useEffect(() => {
+    if (status.Conectado) {
+      setQrFetchEnabled(false);
+      setQrCode('');
+    }
+  }, [status.Conectado]);
 
   return (
     <div className="App">
@@ -317,7 +342,17 @@ function App() {
             <ListaMensagensEnviadas setResponseArea={setResponseArea} />
           )}
           {activeTab === 'informacoes' && (
-            <InformacoesConexao />
+            <InformacoesConexao
+              onConnectStart={() => {
+                setQrFetchEnabled(true);
+                setResponseArea(prev => prev + 'Solicitando conexão manual...\n');
+              }}
+              onDisconnect={() => {
+                setQrFetchEnabled(false);
+                setQrCode('');
+                setResponseArea(prev => prev + 'Conexão encerrada manualmente.\n');
+              }}
+            />
           )}
           {activeTab === 'testarNumero' && (
             <div className="event-test">
@@ -355,6 +390,19 @@ function App() {
             )}
           </div>
         </div>
+        </div>
+      )}
+
+      {/* Overlay do QR Code */}
+      {isLoggedIn && !status?.Conectado && qrCode && (
+        <div className="qrcode-overlay">
+          <div className="qrcode-container">
+            <h2>Escaneie o QR Code para conectar</h2>
+            <img src={qrCode} alt="QR Code WhatsApp" className="qrcode-image" />
+            <p>
+              Abra o WhatsApp no celular &gt; Configurações &gt; Dispositivos conectados &gt; Conectar dispositivo.
+            </p>
+          </div>
         </div>
       )}
     </div>

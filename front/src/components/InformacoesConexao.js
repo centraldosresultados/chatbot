@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { whatsappAPI } from '../services/api';
 import './InformacoesConexao.css';
 
-function InformacoesConexao() {
+function InformacoesConexao({ onConnectStart, onDisconnect }) {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
@@ -29,6 +29,7 @@ function InformacoesConexao() {
     setLoading(true);
     addLog('Iniciando conexão com WhatsApp...', 'info');
     try {
+      onConnectStart?.();
       const response = await whatsappAPI.connect('', 'padrao');
       addLog(response.message || 'Conexão iniciada', 'success');
       setTimeout(loadStatus, 2000);
@@ -47,6 +48,7 @@ function InformacoesConexao() {
     try {
       const response = await whatsappAPI.disconnect();
       addLog(response.message || 'Desconectado', 'success');
+      onDisconnect?.();
       setTimeout(loadStatus, 1000);
     } catch (error) {
       addLog(`Erro ao desconectar: ${error.message}`, 'error');
@@ -181,11 +183,11 @@ function InformacoesConexao() {
           </div>
           <div className="tech-item">
             <span className="label">Porta:</span>
-            <span className="value">3100</span>
+            <span className="value">11001</span>
           </div>
           <div className="tech-item">
             <span className="label">API Base:</span>
-            <span className="value">http://localhost:3100</span>
+            <span className="value">http://localhost:11001</span>
           </div>
         </div>
       </div>

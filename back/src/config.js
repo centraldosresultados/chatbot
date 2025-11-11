@@ -25,7 +25,7 @@ dotenv.config();
  */
 const configuracoes = {
     funcionamento: process.env.APP_ENVIRONMENT || "local",
-    porta: parseInt(process.env.APP_PORT) || 3100,
+    porta: parseInt(process.env.APP_PORT) || 11001,
     dataBase: {
         host: process.env.DB_HOST || 'centraldosresultados.com',
         user: process.env.DB_USER || 'central_resultados',
@@ -42,7 +42,7 @@ const configuracoes = {
 
 // const configuracoes = {
 //     funcionamento: 'web',
-//     porta: 3100,
+//     porta: 11001,
 //     dataBase: {
 //         host: process.env.DB_HOST || 'centraldosresultados.com',
 //         user: process.env.DB_USER || 'central_resultados',
